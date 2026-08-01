@@ -1,4 +1,5 @@
 import Head from 'next/head'
+import HeroBackground from '@/components/HeroBackground'
 import { siteConfig } from '@/lib/config'
 import { useGlobal } from '@/lib/global'
 import { loadExternalResource } from '@/lib/utils'
@@ -55,11 +56,12 @@ const Hero = props => {
     <header
       id='header'
       style={{ zIndex: 1 }}
-      className=' w-full h-screen relative bg-black'>
+      className=' w-full h-screen relative'>
+      <HeroBackground />
       <div className='text-white absolute flex flex-col h-full items-center justify-center w-full '>
         {/* 站点标题 */}
         <div className='text-4xl md:text-5xl shadow-text'>
-          {siteInfo?.title || siteConfig('TITLE')}
+          {siteConfig('TITLE') || siteInfo?.title}
         </div>
         {/* 站点欢迎语 */}
         <div className='mt-2 h-12 items-center text-center shadow-text text-white text-lg'>
@@ -89,7 +91,7 @@ const Hero = props => {
       <img
         id='header-cover'
         src={siteInfo?.pageCover}
-        className={`header-cover object-center w-full h-screen object-cover ${siteConfig('MATERY_HOME_NAV_BACKGROUND_IMG_FIXED', null, CONFIG) ? 'fixed' : ''}`}
+        className={`header-cover object-center w-full h-screen object-cover hidden`}
       />
     </header>
   )
