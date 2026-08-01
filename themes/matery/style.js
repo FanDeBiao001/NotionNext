@@ -54,6 +54,15 @@ const Style = () => {
         scrollbar-color: #4338ca transparent;
       }
 
+      /* 自定义光标 - 3D像素风格 */
+      body {
+        cursor: url('/cursors/default.svg') 2 2, auto;
+      }
+
+      a, button, [role='button'], input, textarea, select, .cursor-pointer {
+        cursor: url('/cursors/pointer.svg') 2 2, pointer;
+      }
+
       ${themeConsoleStyle('matery', CONFIG)}
   `}</style>
   )

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" shape-rendering="crispEdges">
+  <!-- 3D 像素箭头 - 顶面高光 -->
+  <rect x="2" y="2" width="4" height="4" fill="#a5b4fc"/>
+  <rect x="2" y="6" width="4" height="4" fill="#a5b4fc"/>
+  <rect x="6" y="6" width="4" height="4" fill="#a5b4fc"/>
+
+  <!-- 左面中调 -->
+  <rect x="6" y="10" width="4" height="4" fill="#818cf8"/>
+  <rect x="10" y="10" width="4" height="4" fill="#4338ca"/>
+  <rect x="10" y="14" width="4" height="4" fill="#818cf8"/>
+  <rect x="14" y="14" width="4" height="4" fill="#4338ca"/>
+  <rect x="14" y="18" width="4" height="4" fill="#818cf8"/>
+  <rect x="18" y="18" width="4" height="4" fill="#4338ca"/>
+
+  <!-- 箭杆 -->
+  <rect x="6" y="22" width="4" height="4" fill="#818cf8"/>
+  <rect x="10" y="22" width="4" height="4" fill="#4338ca"/>
+  <rect x="10" y="26" width="4" height="4" fill="#818cf8"/>
+  <rect x="14" y="26" width="4" height="4" fill="#4338ca"/>
+
+  <!-- 底部边缘阴影 -->
+  <rect x="14" y="22" width="4" height="4" fill="#3730a3"/>
+  <rect x="18" y="22" width="4" height="4" fill="#312e81"/>
+</svg>

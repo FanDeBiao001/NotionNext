@@ -1,5 +1,4 @@
-// import Image from 'next/image'
-import LazyImage from '@/components/LazyImage'
+import Head from 'next/head'
 import { siteConfig } from '@/lib/config'
 import { useGlobal } from '@/lib/global'
 import { loadExternalResource } from '@/lib/utils'
@@ -71,17 +70,23 @@ const Hero = props => {
           onClick={() => {
             window.scrollTo({ top: wrapperTop, behavior: 'smooth' })
           }}
-          className='glassmorphism mt-12 border cursor-pointer w-40 text-center pt-4 pb-3 text-md text-white hover:bg-orange-600 duration-300 rounded-3xl z-40'>
-          <i className='animate-bounce fas fa-angle-double-down' />{' '}
+          className='mt-12 cursor-pointer flex items-center gap-3 px-8 py-3 text-white/90 border-2 border-white/40 rounded-full
+            hover:bg-white hover:text-gray-800 hover:border-white hover:shadow-lg hover:-translate-y-0.5
+            transition-all duration-300 z-40'>
           <span>
             {siteConfig('MATERY_SHOW_START_READING', null, CONFIG) &&
               locale.COMMON.START_READING}
           </span>
+          <i className='fas fa-angle-double-down' />
         </div>
       </div>
 
-      <LazyImage
-        priority={true}
+      <Head>
+        {siteInfo?.pageCover && (
+          <link rel='preload' href={siteInfo.pageCover} as='image' />
+        )}
+      </Head>
+      <img
         id='header-cover'
         src={siteInfo?.pageCover}
         className={`header-cover object-center w-full h-screen object-cover ${siteConfig('MATERY_HOME_NAV_BACKGROUND_IMG_FIXED', null, CONFIG) ? 'fixed' : ''}`}
