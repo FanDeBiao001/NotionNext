@@ -5,6 +5,7 @@ import * as THREE from 'three'
 
 const PARTICLE_COUNT = 260
 const CONNECT_DISTANCE = 1.4
+const SHOOTING_STAR_COUNT = 5
 
 export default function ParticleNetwork() {
   const mountRef = useRef(null)
@@ -24,6 +25,24 @@ export default function ParticleNetwork() {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     mountRef.current.appendChild(renderer.domElement)
 
+    // Glow texture — canvas-generated radial gradient (circle, not square)
+    function createGlowTexture(innerColor, outerColor, size = 64) {
+      const canvas = document.createElement('canvas')
+      canvas.width = size
+      canvas.height = size
+      const ctx = canvas.getContext('2d')
+      const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
+      gradient.addColorStop(0, innerColor)
+      gradient.addColorStop(0.2, innerColor)
+      gradient.addColorStop(1, outerColor)
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, 0, size, size)
+      return new THREE.CanvasTexture(canvas)
+    }
+
+    const glowTex = createGlowTexture('rgba(160,180,255,1)', 'rgba(160,180,255,0)')
+    const starTex = createGlowTexture('rgba(255,255,255,1)', 'rgba(255,255,255,0)', 32)
+
     // Particles
     const positions = new Float32Array(PARTICLE_COUNT * 3)
     for (let i = 0; i < PARTICLE_COUNT; i++) {
@@ -37,7 +56,10 @@ export default function ParticleNetwork() {
 
     const material = new THREE.PointsMaterial({
       color: '#778cff',
-      size: 0.035,
+      size: 0.08,
+      map: glowTex,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
       transparent: true,
       opacity: 0.8
     })
@@ -69,6 +91,68 @@ export default function ParticleNetwork() {
       }
     }
 
+    // Shooting stars (added directly to scene, no rotation)
+    const starMeshes = []
+    const stars = []
+
+    for (let i = 0; i < SHOOTING_STAR_COUNT; i++) {
+      const headGeo = new THREE.BufferGeometry()
+      const headPos = new Float32Array([0, 0, 3])
+      headGeo.setAttribute('position', new THREE.Float32BufferAttribute(headPos, 3))
+      const headMat = new THREE.PointsMaterial({ color: '#ffffff', size: 0.2, map: starTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0 })
+      const head = new THREE.Points(headGeo, headMat)
+      scene.add(head)
+
+      const tailGeo = new THREE.BufferGeometry()
+      const tailData = new Float32Array(6)
+      tailGeo.setAttribute('position', new THREE.Float32BufferAttribute(tailData, 3))
+      const tailMat = new THREE.LineBasicMaterial({ color: '#a5b4fc', transparent: true, opacity: 0 })
+      const tail = new THREE.Line(tailGeo, tailMat)
+      scene.add(tail)
+
+      starMeshes.push(headGeo, headMat, tailGeo, tailMat)
+
+      stars.push({
+        head,
+        tail,
+        headPos,
+        tailData,
+        active: false,
+        timer: Math.random() * 5
+      })
+    }
+
+    function spawnStar(star) {
+      const x = (Math.random() - 0.5) * 12
+      const y = (Math.random() - 0.5) * 7
+      const angle = -Math.PI / 5 + (Math.random() - 0.5) * 1.2
+      const speed = 0.025 + Math.random() * 0.04
+      const len = 0.8 + Math.random() * 1.5
+
+      star.headPos[0] = x
+      star.headPos[1] = y
+      star.headPos[2] = 3
+      star.head.geometry.attributes.position.needsUpdate = true
+      star.head.visible = true
+      star.tail.visible = true
+      star.head.material.opacity = 1
+      star.head.material.size = 0.15 + Math.random() * 0.2
+
+      star.tailData[0] = x - Math.cos(angle) * len
+      star.tailData[1] = y - Math.sin(angle) * len
+      star.tailData[2] = 3
+      star.tailData[3] = x
+      star.tailData[4] = y
+      star.tailData[5] = 3
+      star.tail.geometry.attributes.position.needsUpdate = true
+      star.tail.material.opacity = 0.6
+
+      star.dirX = Math.cos(angle) * speed
+      star.dirY = Math.sin(angle) * speed
+      star.life = 1.0
+      star.active = true
+    }
+
     // Mouse interaction
     let mouseX = 0
     let mouseY = 0
@@ -98,6 +182,40 @@ export default function ParticleNetwork() {
       particles.rotation.y = baseRotY + mouseX * 0.3
       particles.rotation.x = baseRotX + mouseY * 0.2
 
+      // Update shooting stars (independent of particle rotation)
+      for (const star of stars) {
+        if (!star.active) {
+          star.timer -= 0.016
+          if (star.timer <= 0) {
+            spawnStar(star)
+            star.timer = 4 + Math.random() * 8
+          }
+          continue
+        }
+
+        star.life -= 0.01
+        star.headPos[0] += star.dirX
+        star.headPos[1] += star.dirY
+        star.head.geometry.attributes.position.needsUpdate = true
+
+        star.tailData[0] += star.dirX
+        star.tailData[1] += star.dirY
+        star.tailData[3] = star.headPos[0]
+        star.tailData[4] = star.headPos[1]
+        star.tail.geometry.attributes.position.needsUpdate = true
+
+        const fade = Math.max(0, star.life)
+        star.head.material.opacity = fade
+        star.tail.material.opacity = fade * 0.5
+
+        if (star.life <= 0 || Math.abs(star.headPos[0]) > 8 || Math.abs(star.headPos[1]) > 5) {
+          star.active = false
+          star.head.visible = false
+          star.tail.visible = false
+          star.timer = 3 + Math.random() * 10
+        }
+      }
+
       renderer.render(scene, camera)
     }
     animate()
@@ -118,6 +236,9 @@ export default function ParticleNetwork() {
       geometry.dispose()
       material.dispose()
       lineMaterial.dispose()
+      glowTex.dispose()
+      starTex.dispose()
+      for (const mesh of starMeshes) mesh.dispose()
       if (mountRef.current && mountRef.current.contains(renderer.domElement)) {
         mountRef.current.removeChild(renderer.domElement)
       }
