@@ -41,6 +41,16 @@ const AlgoliaSearchModal = dynamic(
   { ssr: false }
 )
 
+const ParticleNetwork = dynamic(
+  () => import('@/components/HeroBackground/ParticleNetwork'),
+  { ssr: false }
+)
+
+const ShimejiPet = dynamic(
+  () => import('@/components/ShimejiPet'),
+  { ssr: false }
+)
+
 // 主题全局状态
 const ThemeGlobalMatery = createContext()
 export const useMateryGlobal = () => useContext(ThemeGlobalMatery)
@@ -83,8 +93,13 @@ const LayoutBase = props => {
     <ThemeGlobalMatery.Provider value={{ searchModal }}>
       <div
         id='theme-matery'
-        className={`${siteConfig('FONT_STYLE')} min-h-screen flex flex-col justify-between bg-hexo-background-gray dark:bg-black w-full scroll-smooth`}>
+        className={`${siteConfig('FONT_STYLE')} min-h-screen flex flex-col justify-between w-full scroll-smooth`}>
         <Style />
+
+        {/* 全屏固定星空背景 */}
+        <div className='fixed inset-0 z-0'>
+          <ParticleNetwork />
+        </div>
 
         {/* 顶部导航栏 */}
         <Header {...props} />
@@ -94,11 +109,11 @@ const LayoutBase = props => {
 
         <main
           id='wrapper'
-          className={`${siteConfig('MATERY_HOME_BANNER_ENABLE', null, CONFIG) ? '' : 'pt-16'} flex-1 w-full py-8 md:px-8 lg:px-24 relative`}>
+          className={`${siteConfig('MATERY_HOME_BANNER_ENABLE', null, CONFIG) ? '' : 'pt-16'} flex-1 w-full pt-0 pb-8 md:px-8 lg:px-24 relative`}>
           {/* 嵌入区域 */}
           <div
             id='container-slot'
-            className={`w-full ${fullWidth ? '' : 'max-w-6xl'} ${post && ' lg:max-w-3xl 2xl:max-w-4xl '} mt-6 px-3 mx-auto lg:flex lg:space-x-4 justify-center relative z-10`}>
+            className={`w-full ${fullWidth ? '' : 'max-w-6xl'} ${post && ' lg:max-w-3xl 2xl:max-w-4xl '} px-3 mx-auto lg:flex lg:space-x-4 justify-center relative z-10`}>
             {containerSlot}
           </div>
 
@@ -109,8 +124,11 @@ const LayoutBase = props => {
           </div>
         </main>
 
-        {/* 左下角悬浮 */}
-        <div className='bottom-4 -left-14 fixed justify-end z-40'>
+        {/* 桌宠（Shimeji 风格，替代 Live2D） */}
+        <ShimejiPet />
+
+        {/* 左下角悬浮（保留 Live2D 兼容） */}
+        <div className='bottom-4 -left-14 fixed justify-end z-40' style={{ display: 'none' }}>
           <Live2D />
         </div>
 

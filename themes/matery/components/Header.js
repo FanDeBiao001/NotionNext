@@ -26,7 +26,7 @@ const Header = props => {
   const { locale } = useGlobal()
   const searchDrawer = useRef()
   const { isDarkMode } = useGlobal()
-  const throttleMs = 200
+  const throttleMs = 100
   const showSearchButton = siteConfig('MATERY_MENU_SEARCH', false, CONFIG)
 
   const router = useRouter()
@@ -44,15 +44,15 @@ const Header = props => {
         const navTransparent = header && scrollS < 300 // 透明导航条的条件
 
         if (navTransparent) {
-          nav && nav.classList.replace('bg-indigo-700', 'bg-none')
-          nav && nav.classList.replace('text-black', 'text-white')
+          nav && nav.classList.replace('bg-indigo-700', 'bg-transparent')
+          nav && nav.classList.replace('text-gray-700', 'text-gray-200')
           nav && nav.classList.replace('shadow-xl', 'shadow-none')
-          nav && nav.classList.replace('dark:bg-hexo-black-gray', 'transparent')
+          nav && nav.classList.replace('dark:bg-hexo-black-gray', 'dark:bg-transparent')
         } else {
-          nav && nav.classList.replace('bg-none', 'bg-indigo-700')
-          nav && nav.classList.replace('text-white', 'text-black')
+          nav && nav.classList.replace('bg-transparent', 'bg-indigo-700')
+          nav && nav.classList.replace('text-gray-200', 'text-gray-700')
           nav && nav.classList.replace('shadow-none', 'shadow-xl')
-          nav && nav.classList.replace('transparent', 'dark:bg-hexo-black-gray')
+          nav && nav.classList.replace('dark:bg-transparent', 'dark:bg-hexo-black-gray')
         }
 
         if (!showNav) {
@@ -151,9 +151,9 @@ const Header = props => {
       <div
         id='sticky-nav'
         className={
-          'flex justify-center top-0 shadow-none fixed bg-none dark:bg-hexo-black-gray text-gray-200 w-full z-30 transform transition-all duration-200'
+          'flex top-0 shadow-none fixed bg-transparent dark:bg-transparent text-gray-200 w-full z-30 transform transition-all duration-300'
         }>
-        <div className='w-full max-w-6xl flex justify-between items-center px-4 py-2'>
+        <div className='w-full flex justify-between items-center px-4 py-2'>
           {/* 左侧功能 */}
           <div className='justify-start items-center block lg:hidden '>
             <div

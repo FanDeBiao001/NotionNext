@@ -55,9 +55,9 @@ const Progress = ({ targetRef, showPercent = true }) => {
   }, [scrollListener])
 
   return (
-    <div className="h-4 w-full shadow-2xl bg-gray-400 ">
+    <div className="h-4 w-full shadow-2xl bg-gray-300 dark:bg-gray-700">
       <div
-        className="h-4 bg-indigo-400 duration-200"
+        className="h-4 bg-indigo-500 dark:bg-indigo-400 transition-all duration-200"
         style={{ width: `${percent}%` }}
       >
         {showPercent && (

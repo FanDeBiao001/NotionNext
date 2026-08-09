@@ -183,7 +183,7 @@ export default function ParticleNetwork() {
         transparent: true, opacity: 0, toneMapped: false
       })
       const head = new THREE.Sprite(headMat)
-      head.scale.set(0.8, 0.8, 1)
+      head.scale.set(0.22, 0.22, 1)
       head.renderOrder = 11
       head.frustumCulled = false
       head.position.z = -1000
@@ -196,7 +196,7 @@ export default function ParticleNetwork() {
         transparent: true, opacity: 0, toneMapped: false
       })
       const halo = new THREE.Sprite(haloMat)
-      halo.scale.set(2.5, 2.5, 1)
+      halo.scale.set(0.55, 0.55, 1)
       halo.renderOrder = 10
       halo.frustumCulled = false
       halo.position.z = -1000
@@ -347,6 +347,7 @@ export default function ParticleNetwork() {
     }
     window.addEventListener('mousemove', onMouseMove)
 
+    // ==========================================
     // ==========================================
     // Animation
     // ==========================================

@@ -14,7 +14,7 @@ const Style = () => {
         background-color: #f5f5f5;
       }
       .dark body {
-        background-color: black;
+        background-color: #020617;
       }
 
       /* 设置了从上到下的渐变黑色 */
