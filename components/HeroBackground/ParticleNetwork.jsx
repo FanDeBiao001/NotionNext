@@ -5,7 +5,7 @@ import * as THREE from 'three'
 
 const PARTICLE_COUNT = 260
 const CONNECT_DISTANCE = 1.4
-const SHOOTING_STAR_COUNT = 5
+const SHOOTING_STAR_COUNT = 3
 const RING_SIZE = 40
 const RIBBON_Z = 2.97
 const MAX_RIBBON_WIDTH = 0.18
@@ -218,7 +218,7 @@ export default function ParticleNetwork() {
     const starSlots = []
     for (let i = 0; i < SHOOTING_STAR_COUNT; i++) {
       const slot = createStarSlot()
-      slot.spawnTimer = i * 2 // staggered start
+      slot.spawnTimer = i * 5 // staggered start
       starSlots.push(slot)
     }
 
@@ -262,7 +262,7 @@ export default function ParticleNetwork() {
       slot.ribbonGeo.setDrawRange(0, 0)
       slot.headMat.opacity = 0
       slot.haloMat.opacity = 0
-      slot.spawnTimer = 1.5 + Math.random() * 4
+      slot.spawnTimer = 10 + Math.random() * 5
     }
 
     function buildRibbon(slot) {

@@ -1,0 +1,44 @@
+{
+  "models": [
+    {
+      "id": "char_4000_jnight",
+      "name": "正义骑士号",
+      "skeleton": "build_char_4000_jnight.skel",
+      "atlas": "build_char_4000_jnight.atlas",
+      "texture": "build_char_4000_jnight.png",
+      "resourcePath": "https://raw.githubusercontent.com/isHarryh/Ark-Models/refs/heads/main/models/4000_jnight/"
+    },
+    {
+      "id": "char_285_medic2",
+      "name": "Lancet-2",
+      "skeleton": "build_char_285_medic2.skel",
+      "atlas": "build_char_285_medic2.atlas",
+      "texture": "build_char_285_medic2.png",
+      "resourcePath": "https://raw.githubusercontent.com/isHarryh/Ark-Models/refs/heads/main/models/285_medic2/"
+    },
+    {
+      "id": "char_278_orchid",
+      "name": "Castle-3",
+      "skeleton": "build_char_278_orchid.skel",
+      "atlas": "build_char_278_orchid.atlas",
+      "texture": "build_char_278_orchid.png",
+      "resourcePath": "https://raw.githubusercontent.com/isHarryh/Ark-Models/refs/heads/main/models/278_orchid/"
+    },
+    {
+      "id": "char_1023_ghost2",
+      "name": "幽灵鲨",
+      "skeleton": "build_char_1023_ghost2.skel",
+      "atlas": "build_char_1023_ghost2.atlas",
+      "texture": "build_char_1023_ghost2.png",
+      "resourcePath": "https://raw.githubusercontent.com/isHarryh/Ark-Models/refs/heads/main/models/1023_ghost2/"
+    },
+    {
+      "id": "char_1035_skadi2",
+      "name": "斯卡蒂",
+      "skeleton": "build_char_1035_skadi2.skel",
+      "atlas": "build_char_1035_skadi2.atlas",
+      "texture": "build_char_1035_skadi2.png",
+      "resourcePath": "https://raw.githubusercontent.com/isHarryh/Ark-Models/refs/heads/main/models/1035_skadi2/"
+    }
+  ]
+}

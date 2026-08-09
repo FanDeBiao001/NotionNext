@@ -1,21 +1,17 @@
 /**
- * Shimeji 桌宠模型配置
- *
- * 模型格式：Spine骨骼动画 (.skel + .atlas + .png)
- * resourcePath: 模型资源根路径（支持远程URL或本地/public/models/路径）
- *
- * 添加新模型：在 MODELS 数组中追加
- * 自定义模型：设置环境变量 NEXT_PUBLIC_SHIMEJI_MODELS（JSON数组格式）
+ * Shimeji 桌宠本地模型配置
+ * 所有模型资源来自 isHarryh/Ark-Models 仓库
+ * https://github.com/isHarryh/Ark-Models
  */
-
-const MODELS = [
+const LOCAL_MODELS = [
   {
     id: 'char_1038_whitw2',
     name: '白面鸮',
     skeleton: 'build_char_1038_whitw2.skel',
     atlas: 'build_char_1038_whitw2.atlas',
     texture: 'build_char_1038_whitw2.png',
-    resourcePath: 'https://raw.githubusercontent.com/fuyufjh/ArkPets-Web/main/assets/models/1038_whitw2/'
+    resourcePath: 'https://raw.githubusercontent.com/isHarryh/Ark-Models/refs/heads/main/models/1038_whitw2/',
+    source: 'local'
   },
   {
     id: 'char_4058_pepe',
@@ -23,7 +19,8 @@ const MODELS = [
     skeleton: 'build_char_4058_pepe.skel',
     atlas: 'build_char_4058_pepe.atlas',
     texture: 'build_char_4058_pepe.png',
-    resourcePath: 'https://raw.githubusercontent.com/fuyufjh/ArkPets-Web/main/assets/models/4058_pepe/'
+    resourcePath: 'https://raw.githubusercontent.com/isHarryh/Ark-Models/refs/heads/main/models/4058_pepe/',
+    source: 'local'
   },
   {
     id: 'char_4093_frston',
@@ -31,36 +28,36 @@ const MODELS = [
     skeleton: 'build_char_4093_frston.skel',
     atlas: 'build_char_4093_frston.atlas',
     texture: 'build_char_4093_frston.png',
-    resourcePath: 'https://raw.githubusercontent.com/fuyufjh/ArkPets-Web/main/assets/models/4093_frston/'
+    resourcePath: 'https://raw.githubusercontent.com/isHarryh/Ark-Models/refs/heads/main/models/4093_frston/',
+    source: 'local'
   },
-  // 以下角色需从 ArkPets 模型包下载文件后，放入 public/shimeji/ 并改为远程 URL
-  // {
-  //   id: 'char_285_medic2',
-  //   name: 'Lancet-2',
-  //   skeleton: 'build_char_285_medic2.skel',
-  //   atlas: 'build_char_285_medic2.atlas',
-  //   texture: 'build_char_285_medic2.png',
-  //   resourcePath: 'https://your-cdn.com/models/char_285_medic2/'
-  // },
-  // {
-  //   id: 'char_278_orchid',
-  //   name: 'Castle-3',
-  //   skeleton: 'build_char_278_orchid.skel',
-  //   atlas: 'build_char_278_orchid.atlas',
-  //   texture: 'build_char_278_orchid.png',
-  //   resourcePath: 'https://your-cdn.com/models/char_278_orchid/'
-  // }
+  {
+    id: 'char_285_medic2',
+    name: 'Lancet-2',
+    skeleton: 'build_char_285_medic2.skel',
+    atlas: 'build_char_285_medic2.atlas',
+    texture: 'build_char_285_medic2.png',
+    resourcePath: 'https://raw.githubusercontent.com/isHarryh/Ark-Models/refs/heads/main/models/285_medic2/',
+    source: 'local'
+  },
+  {
+    id: 'char_278_orchid',
+    name: 'Castle-3',
+    skeleton: 'build_char_278_orchid.skel',
+    atlas: 'build_char_278_orchid.atlas',
+    texture: 'build_char_278_orchid.png',
+    resourcePath: 'https://raw.githubusercontent.com/isHarryh/Ark-Models/refs/heads/main/models/278_orchid/',
+    source: 'local'
+  },
+  {
+    id: 'char_4000_jnight',
+    name: '正义骑士号',
+    skeleton: 'build_char_4000_jnight.skel',
+    atlas: 'build_char_4000_jnight.atlas',
+    texture: 'build_char_4000_jnight.png',
+    resourcePath: 'https://raw.githubusercontent.com/isHarryh/Ark-Models/refs/heads/main/models/4000_jnight/',
+    source: 'local'
+  }
 ]
 
-// Allow env override for custom models
-let customModels = []
-try {
-  const envModels = process.env.NEXT_PUBLIC_SHIMEJI_MODELS
-  if (envModels) {
-    customModels = JSON.parse(envModels)
-  }
-} catch (e) {
-  console.warn('[Shimeji] Invalid NEXT_PUBLIC_SHIMEJI_MODELS JSON')
-}
-
-export const SHIMEJI_MODELS = customModels.length > 0 ? customModels : MODELS
+export { LOCAL_MODELS }

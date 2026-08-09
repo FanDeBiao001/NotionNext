@@ -37,13 +37,113 @@ export default function ShimejiPet() {
 
     async function initPet() {
       try {
-      // Load model registry
-      const { SHIMEJI_MODELS } = await import('@/conf/shimeji.config')
-      const models = SHIMEJI_MODELS
+      // IndexedDB helpers with LRU eviction (max 3 remote models)
+      const MAX_CACHED = 3
+      function openDB() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open('shimeji-cache', 1)
+          req.onupgradeneeded = () => { req.result.createObjectStore('models') }
+          req.onsuccess = () => resolve(req.result)
+          req.onerror = () => reject(req.error)
+        })
+      }
+      async function cacheModel(model, dataUrls) {
+        try {
+          const db = await openDB()
+          const tx = db.transaction('models', 'readwrite')
+          const store = tx.objectStore('models')
+          store.put({ id: model.id, dataUrls, ts: Date.now() }, model.id)
+          // LRU eviction: keep only MAX_CACHED most recent
+          const all = await new Promise(resolve => {
+            const req = store.getAll()
+            req.onsuccess = () => resolve(req.result || [])
+            req.onerror = () => resolve([])
+          })
+          if (all.length > MAX_CACHED) {
+            all.sort((a, b) => b.ts - a.ts)
+            for (let i = MAX_CACHED; i < all.length; i++) store.delete(all[i].id)
+          }
+        } catch (e) {}
+      }
+      async function getCachedModel(modelId) {
+        try {
+          const db = await openDB()
+          return new Promise(resolve => {
+            const tx = db.transaction('models', 'readonly')
+            const req = tx.objectStore('models').get(modelId)
+            req.onsuccess = () => resolve(req.result || null)
+            req.onerror = () => resolve(null)
+          })
+        } catch (e) { return null }
+      }
 
-      // Persistence: restore last selected model
-      const savedModelId = sessionStorage.getItem('shimeji-model')
-      const initialModel = models.find(m => m.id === savedModelId) || models[0]
+      // Load local models
+      const { LOCAL_MODELS } = await import('@/conf/shimeji.config')
+      const localModels = LOCAL_MODELS
+      let allModels = [...localModels]
+
+      // CORS proxy for all external requests
+      const PROXY = '/api/shimeji/proxy?url='
+      async function sfetch(url, opts) { return fetch(PROXY + encodeURIComponent(url), opts) }
+
+      // Load character name mapping (overridable via /shimeji-names.json)
+      let charNames = {}
+      try {
+        const resp = await fetch('/shimeji-names.json')
+        if (resp.ok) charNames = await resp.json()
+      } catch (e) { /* use empty mapping */ }
+
+      // Format codename as fallback: "jnight" → "Jnight", "surtr" → "Surtr"
+      function modelDisplayName(dirName) {
+        if (charNames[dirName]) return charNames[dirName]
+        const parts = dirName.split('_')
+        const code = parts.length > 1 ? parts.slice(1).join('_') : dirName
+        return code.charAt(0).toUpperCase() + code.slice(1)
+      }
+
+      // Fetch remote model list from GitHub API (cached in sessionStorage)
+      const GITHUB_API = 'https://api.github.com/repos/isHarryh/Ark-Models/contents/models'
+      const RAW_BASE = 'https://raw.githubusercontent.com/isHarryh/Ark-Models/refs/heads/main/models/'
+      const CACHE_KEY = 'shimeji-remote-v2'
+      const CACHE_TS_KEY = 'shimeji-remote-ts-v2'
+      const CACHE_TTL = 3600000 // 1 hour
+
+      try {
+        let remoteModels = null
+        const cached = sessionStorage.getItem(CACHE_KEY)
+        const cachedTs = sessionStorage.getItem(CACHE_TS_KEY)
+        if (cached && cachedTs && (Date.now() - Number(cachedTs)) < CACHE_TTL) {
+          remoteModels = JSON.parse(cached)
+        } else {
+          const resp = await sfetch(GITHUB_API)
+          if (resp.ok) {
+            const dirs = await resp.json()
+            remoteModels = dirs
+              .filter(d => d.type === 'dir')
+              .map(d => ({
+                id: 'char_' + d.name,
+                name: modelDisplayName(d.name),
+                skeleton: `build_char_${d.name}.skel`,
+                atlas: `build_char_${d.name}.atlas`,
+                texture: `build_char_${d.name}.png`,
+                resourcePath: RAW_BASE + encodeURIComponent(d.name) + '/',
+                source: 'remote'
+              }))
+            sessionStorage.setItem(CACHE_KEY, JSON.stringify(remoteModels))
+            sessionStorage.setItem(CACHE_TS_KEY, String(Date.now()))
+          }
+        }
+        if (remoteModels) {
+          const localIds = new Set(localModels.map(m => m.id))
+          for (const rm of remoteModels) {
+            if (!localIds.has(rm.id)) allModels.push(rm)
+          }
+        }
+      } catch (e) { /* remote unavailable, use local only */ }
+
+      // Restore last selected model
+      const savedModelId = localStorage.getItem('shimeji-model')
+      let initialModel = allModels.find(m => m.id === savedModelId) || localModels[0]
 
       // Dynamic import spine-webgl
       const spineModule = await import('@/lib/arkpets/spine-webgl.js')
@@ -90,6 +190,23 @@ export default function ShimejiPet() {
       const mousePos = { x: 0, y: 0 }
       let isMouseOver = false
       let currentModel = initialModel
+      const failedModels = new Set()
+
+      // Toast notification
+      function showToast(msg) {
+        const existing = document.getElementById('shimeji-toast')
+        if (existing) existing.remove()
+        const toast = document.createElement('div')
+        toast.id = 'shimeji-toast'
+        toast.textContent = msg
+        toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a2e;color:#ffc107;padding:10px 24px;border-radius:8px;font-size:14px;font-family:system-ui;box-shadow:0 4px 12px rgba(0,0,0,0.5);opacity:0;transition:opacity 0.3s'
+        document.body.appendChild(toast)
+        requestAnimationFrame(() => { toast.style.opacity = '1' })
+        setTimeout(() => {
+          toast.style.opacity = '0'
+          setTimeout(() => toast.remove(), 300)
+        }, 3500)
+      }
 
       // Menu
       function removeMenu() {
@@ -97,151 +214,244 @@ export default function ShimejiPet() {
         if (m) m.remove()
       }
 
-      function showMenu(e) {
-        e.preventDefault()
+      let activeSub = null
+
+      function closeAll() {
         removeMenu()
+        if (activeSub) { activeSub.remove(); activeSub = null }
+      }
+
+      function showMenu(e) {
+        e.preventDefault(); e.stopPropagation()
+        closeAll()
+
         const menu = document.createElement('div')
         menu.id = 'shimeji-menu'
         menu.style.cssText = 'position:fixed;z-index:1001;background:#1a1a2e;border:1px solid #333;padding:4px 0;box-shadow:0 2px 8px rgba(0,0,0,0.5);font-size:13px;font-family:system-ui;color:#ddd;min-width:140px;border-radius:6px'
-        menu.style.left = Math.min(e.pageX, window.innerWidth - 150) + 'px'
-        menu.style.top = Math.min(e.pageY, window.innerHeight - 200) + 'px'
+        const x = Math.min(e.pageX, window.innerWidth - 300)
+        const y = Math.min(e.pageY, window.innerHeight - 200)
+        menu.style.left = Math.max(0, x) + 'px'
+        menu.style.top = Math.max(0, y) + 'px'
 
-        const addItem = (text, onClick) => {
+        function addItem(text, onEnter, onLeave, onClick) {
           const item = document.createElement('div')
           item.textContent = text
           item.style.cssText = 'padding:6px 16px;cursor:pointer;border-radius:4px;margin:2px 4px'
-          item.onmouseover = () => item.style.background = '#333'
-          item.onmouseout = () => item.style.background = 'transparent'
-          item.onclick = () => { removeMenu(); onClick() }
+          item.onmouseenter = () => { item.style.background = '#333'; if (onEnter) onEnter(item) }
+          item.onmouseleave = () => { item.style.background = 'transparent'; if (onLeave) onLeave() }
+          item.onclick = (ev) => { ev.stopPropagation(); closeAll(); if (onClick) onClick() }
           menu.appendChild(item)
+          return item
         }
 
-        addItem('切换角色 (' + currentModel.name + ') ▸', () => {
-          const sub = document.createElement('div')
-          sub.id = 'shimeji-submenu'
-          sub.style.cssText = 'position:fixed;z-index:1002;background:#1a1a2e;border:1px solid #333;padding:4px 0;box-shadow:0 2px 8px rgba(0,0,0,0.5);font-size:13px;font-family:system-ui;color:#ddd;min-width:140px;max-height:300px;overflow-y:auto;border-radius:6px'
-          const rect = menu.getBoundingClientRect()
-          sub.style.left = (rect.right + 4) + 'px'
-          sub.style.top = Math.min(rect.top, window.innerHeight - 310) + 'px'
-          models.forEach(m => {
-            const isActive = m.id === currentModel.id
-            const item = document.createElement('div')
-            item.textContent = (isActive ? '● ' : '○ ') + m.name
-            item.style.cssText = 'padding:6px 16px;cursor:pointer;border-radius:4px;margin:2px 4px;' + (isActive ? 'color:#ffc107;font-weight:bold' : '')
-            item.onmouseover = () => { if (!isActive) item.style.background = '#333' }
-            item.onmouseout = () => { if (!isActive) item.style.background = 'transparent' }
-            item.onclick = () => {
-              if (isActive) return
-              removeMenu(); sub.remove()
-              sessionStorage.setItem('shimeji-model', m.id)
-              loadModel(m)
-            }
-            sub.appendChild(item)
-          })
-          document.body.appendChild(sub)
-          setTimeout(() => document.addEventListener('click', function h(e) {
-            if (!sub.contains(e.target)) { sub.remove(); document.removeEventListener('click', h) }
-          }), 0)
-        })
+        // Submenu on hover (not click)
+        const switchItem = addItem('切换角色 (' + currentModel.name + ') ▸',
+          (parentItem) => {
+            // Show submenu to the right
+            if (activeSub) { activeSub.remove() }
+            const sub = document.createElement('div')
+            sub.style.cssText = 'position:fixed;z-index:1002;background:#1a1a2e;border:1px solid #333;padding:4px 0;box-shadow:0 2px 8px rgba(0,0,0,0.5);font-size:12px;font-family:system-ui;color:#ddd;min-width:130px;max-height:300px;overflow-y:auto;border-radius:6px'
+            const r = parentItem.getBoundingClientRect()
+            sub.style.left = Math.min(r.right + 4, window.innerWidth - 140) + 'px'
+            sub.style.top = Math.max(0, Math.min(r.top, window.innerHeight - 310)) + 'px'
+
+            allModels.forEach(m => {
+              const isActive = m.id === currentModel.id
+              const isFailed = failedModels.has(m.id)
+              const mi = document.createElement('div')
+              mi.textContent = (isActive ? '● ' : '○ ') + m.name +
+                (m.source === 'local' ? '' : ' ☁️') +
+                (isFailed ? ' ❌' : '')
+              mi.style.cssText = 'padding:6px 16px;border-radius:4px;margin:2px 4px;' +
+                (isActive ? 'color:#ffc107;font-weight:bold' : isFailed ? 'color:#666;cursor:not-allowed' : 'cursor:pointer')
+              if (!isFailed) {
+                mi.onmouseover = () => { if (!isActive) mi.style.background = '#333' }
+                mi.onmouseout = () => { if (!isActive) mi.style.background = 'transparent' }
+                mi.onclick = (ev) => { ev.stopPropagation(); if (!isActive) { closeAll(); loadModel(m) } }
+              }
+              sub.appendChild(mi)
+            })
+            document.body.appendChild(sub)
+            activeSub = sub
+          },
+          () => {
+            // Don't close sub immediately — let user move mouse to it
+            setTimeout(() => {
+              if (activeSub && !activeSub.matches(':hover')) {
+                activeSub.remove(); activeSub = null
+              }
+            }, 200)
+          },
+          null // no click action
+        )
 
         const anims = isVehicle ? ANIM_VEHICLE : ANIM_NAMES
         anims.forEach(anim => {
-          addItem('动作: ' + anim, () => {
+          addItem('动作: ' + anim, null, null, () => {
             currentAction = { animation: anim, direction: currentAction.direction, timestamp: 0 }
             if (character) character.state.setAnimation(0, anim, true)
           })
         })
 
-        addItem('隐藏', () => {
+        addItem('隐藏', null, null, () => {
           if (animationId) cancelAnimationFrame(animationId)
           canvas.remove()
-          removeMenu()
         })
 
         document.body.appendChild(menu)
-        setTimeout(() => document.addEventListener('click', function h(e) {
-          if (!menu.contains(e.target)) { removeMenu(); document.removeEventListener('click', h) }
+
+        // Click outside: close both if neither menu nor submenu is clicked
+        setTimeout(() => document.addEventListener('mousedown', function h(ev) {
+          const hitMenu = menu.contains(ev.target)
+          const hitSub = activeSub && activeSub.contains(ev.target)
+          if (!hitMenu && !hitSub) { closeAll(); document.removeEventListener('mousedown', h) }
         }), 0)
+
+        // If sub is open, check if mouse leaves sub → close sub only
+        if (activeSub) {
+          activeSub.addEventListener('mouseleave', () => {
+            setTimeout(() => {
+              if (activeSub && !activeSub.matches(':hover') && !menu.matches(':hover')) {
+                activeSub.remove(); activeSub = null
+              }
+            }, 100)
+          })
+        }
       }
 
-      // Load character model
+      // Load character model — NEVER stops old pet until new one is fully rendered
       async function loadModel(model) {
-        // Stop current render loop and clear character before switching
-        if (animationId) { cancelAnimationFrame(animationId); animationId = null }
-        character = null
-        isVehicle = false
+        if (currentModel.id === model.id && character) return
 
-        currentModel = model
-
-        function encodePath(p) { return encodeURIComponent(p).replace(/%2F/g, '/') }
         const resources = [model.skeleton, model.atlas, model.texture]
         const basePath = model.resourcePath || ''
+        console.log('[Shimeji] Loading:', model.name, 'source:', model.source || 'local')
 
         try {
-          const dataUrls = await Promise.all(resources.map(async r => {
-            const resp = await fetch(basePath + encodePath(r))
-            if (!resp.ok) throw new Error(`HTTP ${resp.status} for ${r}`)
-            const blob = await resp.blob()
-            return new Promise(resolve => {
-              const reader = new FileReader()
-              reader.onloadend = () => resolve(reader.result)
-              reader.readAsDataURL(blob)
-            })
-          }))
+          let dataUrls
+          const cached = model.source === 'remote' ? await getCachedModel(model.id) : null
+          if (cached && cached.dataUrls) {
+            dataUrls = cached.dataUrls
+            console.log('[Shimeji] Using cached model:', model.name)
+          } else {
+            // Download sequentially to avoid overwhelming proxy/timeout
+            dataUrls = []
+            for (const r of resources) {
+              const url = basePath + encodeURIComponent(r)
+              const resp = await sfetch(url)
+              if (!resp.ok) throw new Error(`HTTP ${resp.status} for ${r}`)
+              const blob = await resp.blob()
+              dataUrls.push(await new Promise(resolve => {
+                const reader = new FileReader()
+                reader.onloadend = () => resolve(reader.result)
+                reader.readAsDataURL(blob)
+              }))
+            }
+            if (model.source === 'remote') await cacheModel(model, dataUrls)
+            console.log('[Shimeji] Downloaded model:', model.name)
+          }
 
+          // Set raw data then load binary+atlas (yield to render loop first)
           resources.forEach((r, i) => assetManager.setRawDataURI(r, dataUrls[i]))
+          await new Promise(r => requestAnimationFrame(r))
           assetManager.removeAll()
 
-          assetManager.loadBinary(model.skeleton, () => {
-            assetManager.loadTextureAtlas(model.atlas, () => {
-              resources.forEach(r => assetManager.setRawDataURI(r, ''))
-              initCharacter()
+          await new Promise((resolveLoad, rejectLoad) => {
+            const timeout = setTimeout(() => rejectLoad(new Error('timeout')), 15000)
+            assetManager.loadBinary(model.skeleton, () => {
+              assetManager.loadTextureAtlas(model.atlas, () => {
+                clearTimeout(timeout)
+                resolveLoad()
+              })
             })
           })
+
+          resources.forEach(r => assetManager.setRawDataURI(r, ''))
+          currentModel = model
+          localStorage.setItem('shimeji-model', model.id)
+
+          if (animationId) { cancelAnimationFrame(animationId); animationId = null }
+          character = null; isVehicle = false
+          await new Promise(r => requestAnimationFrame(r))
+          initCharacter()
+          console.log('[Shimeji] Switched to:', model.name)
+
         } catch (err) {
-          console.error('[Shimeji] Failed to load model:', model.name, err)
-          // Fallback: stay with current state, animation will restart
-          if (!animationId) animationId = requestAnimationFrame(render)
+          console.warn('[Shimeji] Load failed for', model.name, err.message)
+          showToast('资源加载失败，请检查网络后重试')
+          failedModels.add(model.id)
+          // Clear broken localStorage entry
+          if (localStorage.getItem('shimeji-model') === model.id) {
+            localStorage.removeItem('shimeji-model')
+          }
+          // Try first local model as fallback
+          if (!character && allModels.length > 0) {
+            const fallback = allModels.find(m => m.source === 'local') || allModels[0]
+            if (fallback && fallback.id !== model.id) {
+              console.warn('[Shimeji] Falling back to:', fallback.name)
+              showToast(model.name + ' 加载失败，已切换至 ' + fallback.name)
+              loadModel(fallback)
+              return
+            }
+          }
+          if (!animationId && character) animationId = requestAnimationFrame(render)
         }
       }
 
       function initCharacter() {
-        const atlas = assetManager.get(currentModel.atlas)
-        const atlasLoader = new spine.AtlasAttachmentLoader(atlas)
-        const skeletonBinary = new spine.SkeletonBinary(atlasLoader)
-        skeletonBinary.scale = 0.3 * 0.75 * pixelRatio
-        const skeletonData = skeletonBinary.readSkeletonData(assetManager.get(currentModel.skeleton))
-        const skeleton = new spine.Skeleton(skeletonData)
+        try {
+          const atlas = assetManager.get(currentModel.atlas)
+          if (!atlas) throw new Error('atlas asset not loaded')
+          const atlasLoader = new spine.AtlasAttachmentLoader(atlas)
+          const skeletonBinary = new spine.SkeletonBinary(atlasLoader)
+          skeletonBinary.scale = 0.3 * 0.75 * pixelRatio
 
-        isVehicle = !skeletonData.findAnimation('Sit') || !skeletonData.findAnimation('Sleep')
+          const skelAsset = assetManager.get(currentModel.skeleton)
+          if (!skelAsset) throw new Error('skeleton asset not loaded')
+          const skeletonData = skeletonBinary.readSkeletonData(skelAsset)
+          const skeleton = new spine.Skeleton(skeletonData)
 
-        const animStateData = new spine.AnimationStateData(skeleton.data)
-        const names = isVehicle ? ANIM_VEHICLE : ANIM_NAMES
-        names.forEach(a => names.forEach(b => { if (a !== b) animStateData.setMix(a, b, 0.3) }))
-        const animState = new spine.AnimationState(animStateData)
-        animState.setAnimation(0, 'Relax', true)
+          isVehicle = !skeletonData.findAnimation('Sit') || !skeletonData.findAnimation('Sleep')
 
-        animState.addListener({
-          complete() {
-            const markov = isVehicle ? ANIM_VEHICLE_MARKOV : ANIM_MARKOV
-            const idx = names.indexOf(currentAction.animation)
-            const nextIdx = randomPick(markov[idx])
-            let dir = currentAction.direction
-            if (currentAction.animation === 'Relax' && names[nextIdx] === 'Move' && Math.random() < 0.4) {
-              dir = dir === 'left' ? 'right' : 'left'
-            }
-            currentAction = { animation: names[nextIdx], direction: dir, timestamp: 0 }
-            animState.setAnimation(0, currentAction.animation, true)
+          // Reset action if current animation doesn't exist in this model
+          const names = isVehicle ? ANIM_VEHICLE : ANIM_NAMES
+          if (!names.includes(currentAction.animation)) {
+            currentAction = { animation: 'Relax', direction: 'right', timestamp: 0 }
           }
-        })
 
-        skeleton.x = canvas.width / 2; skeleton.y = 0
-        character = { skeleton, state: animState }
-        lastFrameTime = Date.now() / 1000
-        if (!animationId) animationId = requestAnimationFrame(render)
+          const animStateData = new spine.AnimationStateData(skeleton.data)
+          names.forEach(a => names.forEach(b => { if (a !== b) animStateData.setMix(a, b, 0.3) }))
+          const animState = new spine.AnimationState(animStateData)
+          animState.setAnimation(0, 'Relax', true)
+
+          animState.addListener({
+            complete() {
+              const markov = isVehicle ? ANIM_VEHICLE_MARKOV : ANIM_MARKOV
+              const idx = names.indexOf(currentAction.animation)
+              const nextIdx = randomPick(markov[idx])
+              let dir = currentAction.direction
+              if (currentAction.animation === 'Relax' && names[nextIdx] === 'Move' && Math.random() < 0.4) {
+                dir = dir === 'left' ? 'right' : 'left'
+              }
+              currentAction = { animation: names[nextIdx], direction: dir, timestamp: 0 }
+              animState.setAnimation(0, currentAction.animation, true)
+            }
+          })
+
+          skeleton.x = canvas.width / 2; skeleton.y = 0
+          character = { skeleton, state: animState }
+          lastFrameTime = Date.now() / 1000
+          if (!animationId) animationId = requestAnimationFrame(render)
+        } catch (err) {
+          console.error('[Shimeji] initCharacter failed:', err.message)
+          // Restart render to keep canvas alive even if character is null
+          if (!animationId) animationId = requestAnimationFrame(render)
+        }
       }
 
       // Render loop
+      let readPixelsSkip = 0
+
       function render() {
         const now = Date.now() / 1000
         const delta = Math.min(now - lastFrameTime, 0.1)
@@ -297,23 +507,28 @@ export default function ShimejiPet() {
           batcher.end()
           shader.unbind()
 
-          // Mouse-over detection
-          const rect = canvas.getBoundingClientRect()
-          const px = (mousePos.x - rect.x) * pixelRatio
-          const py = canvas.height - (mousePos.y - rect.y) * pixelRatio
-          if (px >= 0 && px < canvas.width && py >= 0 && py < canvas.height) {
-            const pixel = new Uint8Array(4)
-            gl.readPixels(px, py, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel)
-            isMouseOver = pixel[3] !== 0
-            canvas.style.pointerEvents = isMouseOver ? 'auto' : 'none'
-            // CSS drop-shadow for outline effect (browser-native, always correct)
-            canvas.style.filter = isMouseOver
-              ? 'drop-shadow(1px 0 0 #ffc107) drop-shadow(-1px 0 0 #ffc107) drop-shadow(0 1px 0 #ffc107) drop-shadow(0 -1px 0 #ffc107)'
-              : 'none'
-          } else {
-            isMouseOver = false
-            canvas.style.pointerEvents = 'none'
-            canvas.style.filter = 'none'
+          // Mouse-over detection (throttled to every 4th frame — expensive readPixels)
+          readPixelsSkip++
+          if (readPixelsSkip % 6 === 0) {
+            const rect = canvas.getBoundingClientRect()
+            const px = (mousePos.x - rect.x) * pixelRatio
+            const py = canvas.height - (mousePos.y - rect.y) * pixelRatio
+            if (px >= 0 && px < canvas.width && py >= 0 && py < canvas.height) {
+              const pixel = new Uint8Array(4)
+              gl.readPixels(px, py, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel)
+              const wasMouseOver = isMouseOver
+              isMouseOver = pixel[3] !== 0
+              if (isMouseOver !== wasMouseOver) {
+                canvas.style.pointerEvents = isMouseOver ? 'auto' : 'none'
+                canvas.style.filter = isMouseOver
+                  ? 'drop-shadow(1px 0 0 #ffc107) drop-shadow(-1px 0 0 #ffc107) drop-shadow(0 1px 0 #ffc107) drop-shadow(0 -1px 0 #ffc107)'
+                  : 'none'
+              }
+            } else if (isMouseOver) {
+              isMouseOver = false
+              canvas.style.pointerEvents = 'none'
+              canvas.style.filter = 'none'
+            }
           }
         }
 
@@ -329,7 +544,16 @@ export default function ShimejiPet() {
           character.state.setAnimation(0, 'Interact', false)
         }
       })
-      canvas.addEventListener('contextmenu', showMenu)
+      // Suppress browser context menu on pet + show custom menu
+      document.addEventListener('contextmenu', (e) => {
+        const rect = canvas.getBoundingClientRect()
+        if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+          e.preventDefault()
+          e.stopPropagation()
+          closeAll()
+          showMenu(e)
+        }
+      }, true)
 
       function dragStart(e) {
         if (e.button !== undefined && e.button !== 0) return

@@ -1,6 +1,5 @@
 import Comment from '@/components/Comment'
 import { AdSlot } from '@/components/GoogleAdsense'
-import Live2D from '@/components/Live2D'
 import replaceSearchResult from '@/components/Mark'
 import NotionPage from '@/components/NotionPage'
 import ShareBar from '@/components/ShareBar'
@@ -124,13 +123,8 @@ const LayoutBase = props => {
           </div>
         </main>
 
-        {/* 桌宠（Shimeji 风格，替代 Live2D） */}
+        {/* 桌宠（Shimeji 风格） */}
         <ShimejiPet />
-
-        {/* 左下角悬浮（保留 Live2D 兼容） */}
-        <div className='bottom-4 -left-14 fixed justify-end z-40' style={{ display: 'none' }}>
-          <Live2D />
-        </div>
 
         {/* 右下角悬浮 */}
         <RightFloatButtons {...props} floatRightBottom={floatRightBottom} />
