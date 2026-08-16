@@ -37,10 +37,10 @@ const SocialButton = () => {
 
   // 单个图标的通用样式：40px 圆形容器 + 居中，与其它悬浮按钮一致
   const iconWrapperCls =
-    'flex justify-center items-center w-10 h-10 hover:bg-indigo-600 dark:hover:bg-gray-800'
+    'flex justify-center items-center w-10 h-10 hover:bg-gray-800 dark:hover:bg-gray-800'
 
   return (
-    <div className='flex flex-col items-center w-10 transform hover:scale-105 duration-200 text-white text-center bg-indigo-700 rounded-full dark:bg-hexo-black-gray cursor-pointer overflow-hidden select-none'>
+    <div className='flex flex-col items-center w-10 transform hover:scale-105 duration-200 text-white text-center bg-black rounded-full dark:bg-hexo-black-gray cursor-pointer overflow-hidden select-none'>
       {!show && (
         <i
           onClick={toggleShow}

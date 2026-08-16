@@ -15,7 +15,7 @@ const Footer = ({ title }) => {
   })()
 
   return (
-    <footer className='relative z-10 dark:bg-hexo-black-gray flex-shrink-0 bg-indigo-700 text-gray-300 justify-center text-center m-auto w-full leading-6 dark:text-gray-100 text-sm p-6'>
+    <footer className='relative z-10 dark:bg-black/70 flex-shrink-0 bg-black/70 backdrop-blur-md text-gray-300 justify-center text-center m-auto w-full leading-6 dark:text-gray-100 text-sm p-6'>
       {/* <DarkModeButton/> */}
       <i className='fas fa-copyright' /> {`${copyrightDate}`}{' '}
       <span>
@@ -48,15 +48,6 @@ const Footer = ({ title }) => {
         </span>
         <br />
         <h1>{title}</h1>
-        <span className='text-xs '>
-          Powered by{' '}
-          <a
-            href='https://github.com/tangly1024/NotionNext'
-            className='underline dark:text-gray-300'>
-            NotionNext {siteConfig('VERSION')}
-          </a>
-          .
-        </span>
       </span>
       <br />
     </footer>

@@ -151,6 +151,7 @@ export default function ShimejiPet() {
       const webgl = spine.webgl
 
       const pixelRatio = Math.min(window.devicePixelRatio || 1, 2)
+      const isTouchDevice = 'ontouchstart' in window || (navigator.maxTouchPoints || 0) > 0
 
       // Create canvas
       const canvas = document.createElement('canvas')
@@ -158,6 +159,8 @@ export default function ShimejiPet() {
       canvas.id = 'shimeji-pet'
       canvas.style.cssText = 'position:fixed;top:0;left:0;z-index:1000;pointer-events:none;width:150px;height:150px'
       document.body.appendChild(canvas)
+      // 移动端无 hover，直接让宠物可点按；桌面端仍由 readPixels 按像素控制 pointer-events
+      if (isTouchDevice) canvas.style.pointerEvents = 'auto'
 
       // WebGL setup
       const gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false })
@@ -244,36 +247,37 @@ export default function ShimejiPet() {
           return item
         }
 
-        // Submenu on hover (not click)
-        const switchItem = addItem('切换角色 (' + currentModel.name + ') ▸',
-          (parentItem) => {
-            // Show submenu to the right
-            if (activeSub) { activeSub.remove() }
-            const sub = document.createElement('div')
-            sub.style.cssText = 'position:fixed;z-index:1002;background:#1a1a2e;border:1px solid #333;padding:4px 0;box-shadow:0 2px 8px rgba(0,0,0,0.5);font-size:12px;font-family:system-ui;color:#ddd;min-width:130px;max-height:300px;overflow-y:auto;border-radius:6px'
-            const r = parentItem.getBoundingClientRect()
-            sub.style.left = Math.min(r.right + 4, window.innerWidth - 140) + 'px'
-            sub.style.top = Math.max(0, Math.min(r.top, window.innerHeight - 310)) + 'px'
+        // Submenu on hover (desktop) or click (mobile)
+        function buildSubmenu(parentItem) {
+          if (activeSub) { activeSub.remove(); activeSub = null }
+          const sub = document.createElement('div')
+          sub.style.cssText = 'position:fixed;z-index:1002;background:#1a1a2e;border:1px solid #333;padding:4px 0;box-shadow:0 2px 8px rgba(0,0,0,0.5);font-size:12px;font-family:system-ui;color:#ddd;min-width:130px;max-height:300px;overflow-y:auto;border-radius:6px'
+          const r = parentItem.getBoundingClientRect()
+          sub.style.left = Math.min(r.right + 4, window.innerWidth - 140) + 'px'
+          sub.style.top = Math.max(0, Math.min(r.top, window.innerHeight - 310)) + 'px'
 
-            allModels.forEach(m => {
-              const isActive = m.id === currentModel.id
-              const isFailed = failedModels.has(m.id)
-              const mi = document.createElement('div')
-              mi.textContent = (isActive ? '● ' : '○ ') + m.name +
-                (m.source === 'local' ? '' : ' ☁️') +
-                (isFailed ? ' ❌' : '')
-              mi.style.cssText = 'padding:6px 16px;border-radius:4px;margin:2px 4px;' +
-                (isActive ? 'color:#ffc107;font-weight:bold' : isFailed ? 'color:#666;cursor:not-allowed' : 'cursor:pointer')
-              if (!isFailed) {
-                mi.onmouseover = () => { if (!isActive) mi.style.background = '#333' }
-                mi.onmouseout = () => { if (!isActive) mi.style.background = 'transparent' }
-                mi.onclick = (ev) => { ev.stopPropagation(); if (!isActive) { closeAll(); loadModel(m) } }
-              }
-              sub.appendChild(mi)
-            })
-            document.body.appendChild(sub)
-            activeSub = sub
-          },
+          allModels.forEach(m => {
+            const isActive = m.id === currentModel.id
+            const isFailed = failedModels.has(m.id)
+            const mi = document.createElement('div')
+            mi.textContent = (isActive ? '● ' : '○ ') + m.name +
+              (m.source === 'local' ? '' : ' ☁️') +
+              (isFailed ? ' ❌' : '')
+            mi.style.cssText = 'padding:6px 16px;border-radius:4px;margin:2px 4px;' +
+              (isActive ? 'color:#ffc107;font-weight:bold' : isFailed ? 'color:#666;cursor:not-allowed' : 'cursor:pointer')
+            if (!isFailed) {
+              mi.onmouseover = () => { if (!isActive) mi.style.background = '#333' }
+              mi.onmouseout = () => { if (!isActive) mi.style.background = 'transparent' }
+              mi.onclick = (ev) => { ev.stopPropagation(); if (!isActive) { closeAll(); loadModel(m) } }
+            }
+            sub.appendChild(mi)
+          })
+          document.body.appendChild(sub)
+          activeSub = sub
+        }
+
+        const switchItem = addItem('切换角色 (' + currentModel.name + ') ▸',
+          (parentItem) => { buildSubmenu(parentItem) },
           () => {
             // Don't close sub immediately — let user move mouse to it
             setTimeout(() => {
@@ -284,6 +288,15 @@ export default function ShimejiPet() {
           },
           null // no click action
         )
+        // 点击切换展开/收起子菜单（移动端无 hover）
+        switchItem.onclick = (ev) => {
+          ev.stopPropagation()
+          if (activeSub) {
+            activeSub.remove(); activeSub = null
+          } else {
+            buildSubmenu(switchItem)
+          }
+        }
 
         const anims = isVehicle ? ANIM_VEHICLE : ANIM_NAMES
         anims.forEach(anim => {
@@ -301,7 +314,10 @@ export default function ShimejiPet() {
         document.body.appendChild(menu)
 
         // Click outside: close both if neither menu nor submenu is clicked
+        const openedAt = Date.now()
         setTimeout(() => document.addEventListener('mousedown', function h(ev) {
+          // 忽略长按释放瞬间产生的合成 mousedown，避免菜单刚出现就被关闭
+          if (Date.now() - openedAt < 500) return
           const hitMenu = menu.contains(ev.target)
           const hitSub = activeSub && activeSub.contains(ev.target)
           if (!hitMenu && !hitSub) { closeAll(); document.removeEventListener('mousedown', h) }
@@ -555,6 +571,17 @@ export default function ShimejiPet() {
         }
       }, true)
 
+      // 移动端长按打开菜单
+      let longPressTimer = null
+      let longPressStartX = 0
+      let longPressStartY = 0
+      const LONG_PRESS_MS = 500
+      const LONG_PRESS_TOLERANCE = 12
+
+      function cancelLongPress() {
+        if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null }
+      }
+
       function dragStart(e) {
         if (e.button !== undefined && e.button !== 0) return
         isDragging = true
@@ -567,9 +594,14 @@ export default function ShimejiPet() {
         }
       }
       function dragMove(e) {
-        if (!isDragging) return
         const cx = e.touches ? e.touches[0].clientX : e.clientX
         const cy = e.touches ? e.touches[0].clientY : e.clientY
+        if (e.touches) {
+          const dx = cx - longPressStartX
+          const dy = cy - longPressStartY
+          if (dx * dx + dy * dy > LONG_PRESS_TOLERANCE * LONG_PRESS_TOLERANCE) cancelLongPress()
+        }
+        if (!isDragging) return
         const newX = cx - dragStartX; const newY = cy - dragStartY
         if (lastDragEvent) {
           const dt = (e.timeStamp - lastDragEvent.timeStamp) / 1000
@@ -579,10 +611,22 @@ export default function ShimejiPet() {
         lastDragEvent = e
         if (e.touches) e.preventDefault()
       }
-      function dragEnd() { isDragging = false; lastDragEvent = null }
+      function dragEnd() { isDragging = false; lastDragEvent = null; cancelLongPress() }
 
       canvas.addEventListener('mousedown', dragStart)
       canvas.addEventListener('touchstart', dragStart, { passive: false })
+      // 长按手势：在移动阈值内按住 500ms 打开菜单（与 dragStart 并存）
+      canvas.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return
+        const t = e.touches[0]
+        longPressStartX = t.clientX
+        longPressStartY = t.clientY
+        cancelLongPress()
+        longPressTimer = setTimeout(() => {
+          isDragging = false
+          showMenu({ pageX: longPressStartX, pageY: longPressStartY, preventDefault: () => {}, stopPropagation: () => {} })
+        }, LONG_PRESS_MS)
+      }, { passive: true })
       document.addEventListener('mousemove', dragMove)
       document.addEventListener('touchmove', dragMove, { passive: false })
       document.addEventListener('mouseup', dragEnd)
