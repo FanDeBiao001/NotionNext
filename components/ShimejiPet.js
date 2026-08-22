@@ -256,6 +256,7 @@ export default function ShimejiPet() {
           sub.style.left = Math.min(r.right + 4, window.innerWidth - 140) + 'px'
           sub.style.top = Math.max(0, Math.min(r.top, window.innerHeight - 310)) + 'px'
 
+          let activeItemEl = null
           allModels.forEach(m => {
             const isActive = m.id === currentModel.id
             const isFailed = failedModels.has(m.id)
@@ -265,6 +266,7 @@ export default function ShimejiPet() {
               (isFailed ? ' ❌' : '')
             mi.style.cssText = 'padding:6px 16px;border-radius:4px;margin:2px 4px;' +
               (isActive ? 'color:#ffc107;font-weight:bold' : isFailed ? 'color:#666;cursor:not-allowed' : 'cursor:pointer')
+            if (isActive) activeItemEl = mi
             if (!isFailed) {
               mi.onmouseover = () => { if (!isActive) mi.style.background = '#333' }
               mi.onmouseout = () => { if (!isActive) mi.style.background = 'transparent' }
@@ -274,6 +276,10 @@ export default function ShimejiPet() {
           })
           document.body.appendChild(sub)
           activeSub = sub
+          // 滚动到当前选中角色（居中显示），避免每次都从第 0 项开始
+          if (activeItemEl) {
+            sub.scrollTop = activeItemEl.offsetTop - sub.clientHeight / 2 + activeItemEl.offsetHeight / 2
+          }
         }
 
         const switchItem = addItem('切换角色 (' + currentModel.name + ') ▸',
