@@ -157,6 +157,8 @@ Integration 可以理解成“给 NotionNext 使用的机器人账号”。Notio
 
 在 Vercel、Netlify、Zeabur、服务器 `.env` 等部署环境中添加：
 
+> Vercel 里请确认变量加在当前站点实际使用的环境作用域里，通常是 `Production`；如果你在预览站测试，也要同时配 `Preview`。
+
 ```bash
 # 可选：Notion 评论默认已开启；设为 false 可关闭
 NEXT_PUBLIC_COMMENT_NOTION_ENABLE=true

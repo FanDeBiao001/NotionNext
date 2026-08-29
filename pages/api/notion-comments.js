@@ -8,9 +8,9 @@ import {
   validateCommentPayload
 } from '@/lib/plugins/notionComments'
 
-const databaseId = process.env.NOTION_COMMENT_DATABASE_ID
-const token = process.env.NOTION_TOKEN
 const requireApproval = process.env.NOTION_COMMENT_REQUIRE_APPROVAL === 'true'
+const databaseId = process.env.NOTION_COMMENT_DATABASE_ID || ''
+const token = process.env.NOTION_TOKEN || ''
 const rateWindowMs = 60 * 1000
 const rateLimit = Number(process.env.NOTION_COMMENT_RATE_LIMIT || 5)
 const ipHits = new Map()
@@ -31,6 +31,13 @@ const getErrorStatus = error =>
   500
 
 const getErrorHint = error => {
+  if (
+    String(error?.message || '').includes(
+      'Missing NOTION_COMMENT_DATABASE_ID or NOTION_TOKEN'
+    )
+  ) {
+    return '请确认 Vercel 的 Production 或 Preview 环境变量已配置，并重新部署当前站点。'
+  }
   if (error?.code === 'EMAIL_FIELD_MISSING') {
     return '请在评论数据库中添加 Author(email) 或 EmailHash(rich_text) 字段。'
   }
