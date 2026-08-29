@@ -63,22 +63,22 @@ Notion API 支持读取和创建页面评论，但它更适合工作区内部协
 | `PostId`    | Title  | 文章的 Notion 页面 ID，用来关联评论和文章 |
 | `ParentId`  | Text   | 父评论 ID，一级评论留空                   |
 | `Content`   | Text   | 评论正文                                  |
-| `IpAddress` | Text   | 访客 IP，用于排查滥用                     |
 | `Nickname`  | Text   | 访客填写的显示名称，用于前台展示          |
-| `Author`    | Email  | 访客邮箱，不会在前台公开                  |
 | `Level`     | Number | 回复层级                                  |
+| `IpAddress` | Text   | 访客 IP，用于排查滥用                     |
 
 增强字段建议一起添加，复制模板的用户通常已经包含这些字段：
 
 | 字段        | 类型   | 说明                                               |
 | ----------- | ------ | -------------------------------------------------- |
 | `Website`   | URL    | 访客可选填写的网站地址                             |
-| `EmailHash` | Text   | 邮箱哈希，用于未来头像、会员识别或去重             |
-| `Status`    | Select | 审核状态，建议选项为 `Approved`、`Pending`、`Spam` |
+| `Status`    | Select | 审核状态，建议选项为 `Approved`、`Pending`         |
 | `CreatedAt` | Date   | 评论提交时间                                       |
 | `UserAgent` | Text   | 浏览器 User-Agent，用于排查垃圾评论                |
 
-基础字段必须存在；增强字段是可选的。旧数据库不添加增强字段也能继续提交评论，只是不会启用昵称保存、审核状态和额外排查信息。
+基础字段必须存在；增强字段是可选的。旧数据库不添加增强字段也能继续提交评论，只是不会启用网站、审核状态和额外排查信息。
+
+如果你希望邮箱实际落库，请保留 `Author`(Email) 或 `EmailHash`(Text) 其中至少一个字段；`ParentId` 和 `IpAddress` 对旧数据库是可选的。
 
 建议把这个数据库放在站点数据库之外，方便单独管理评论。
 

@@ -32,6 +32,15 @@ const Comment = ({ frontMatter, className }) => {
     siteConfig('COMMENT_NOTION_ENABLE') === 'true'
 
   useEffect(() => {
+    if (process.env.NODE_ENV !== 'development') return
+    console.info('[Comment] state', {
+      theme: siteConfig('THEME'),
+      notionEnabled: COMMENT_NOTION_ENABLE,
+      hasPostId: Boolean(frontMatter?.id)
+    })
+  }, [COMMENT_NOTION_ENABLE, frontMatter?.id])
+
+  useEffect(() => {
     // Check if the component is visible in the viewport
     const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
@@ -79,9 +88,9 @@ const Comment = ({ frontMatter, className }) => {
     }
   }, [router.isReady, router.asPath, router.query])
 
-  if (!frontMatter) {
-    return null
-  }
+    if (!frontMatter) {
+      return null
+    }
 
   if (isSearchEngineBot) {
     return null

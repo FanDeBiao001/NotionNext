@@ -18,6 +18,35 @@ const formatTime = value => {
 
 const getInitial = name => (name || '?').trim().slice(0, 1).toUpperCase()
 
+const readErrorDetail = async response => {
+  const contentType = response.headers.get('content-type') || ''
+  if (contentType.includes('application/json')) {
+    try {
+      const data = await response.json()
+      return {
+        detail: data?.detail || '',
+        hint: data?.hint || '',
+        error: data?.error || ''
+      }
+    } catch {
+      return { detail: '', hint: '', error: '' }
+    }
+  }
+
+  try {
+    return { detail: (await response.text()).trim(), hint: '', error: '' }
+  } catch {
+    return { detail: '', hint: '', error: '' }
+  }
+}
+
+const getUserFacingError = (fallback, error) => {
+  if (error instanceof Error) {
+    return error.message || fallback
+  }
+  return fallback
+}
+
 const NotionComments = ({ postId }) => {
   const [comments, setComments] = useState([])
   const [content, setContent] = useState('')
@@ -43,10 +72,18 @@ const NotionComments = ({ postId }) => {
       const response = await fetch(
         `/api/notion-comments?postId=${encodeURIComponent(postId)}`
       )
-      if (!response.ok) throw new Error('Failed to load comments')
+      if (!response.ok) {
+        const payload = await readErrorDetail(response)
+        throw new Error(
+          payload.detail ||
+            payload.hint ||
+            payload.error ||
+            `Failed to load comments (${response.status})`
+        )
+      }
       setComments(await response.json())
     } catch (error) {
-      setError('评论加载失败，请重试')
+      setError(getUserFacingError('评论加载失败，请重试', error))
     } finally {
       setLoading(false)
     }
@@ -95,7 +132,15 @@ const NotionComments = ({ postId }) => {
           honeypot
         })
       })
-      if (!response.ok) throw new Error('Failed to submit comment')
+      if (!response.ok) {
+        const payload = await readErrorDetail(response)
+        throw new Error(
+          payload.detail ||
+            payload.hint ||
+            payload.error ||
+            `Failed to submit comment (${response.status})`
+        )
+      }
       const result = await response.json()
       setContent('')
       setReplyTo('')
@@ -115,7 +160,7 @@ const NotionComments = ({ postId }) => {
       }
       await loadComments()
     } catch (error) {
-      setError('评论提交失败，请稍后重试')
+      setError(getUserFacingError('评论提交失败，请稍后重试', error))
     } finally {
       setSubmitting(false)
     }
@@ -263,7 +308,7 @@ const NotionComments = ({ postId }) => {
           {replyTarget ? `回复 @${replyTarget.author}` : '发表回复'}
         </h3>
         <p className='mt-2 text-sm text-gray-500 dark:text-gray-400'>
-          您的邮箱地址不会被公开。显示名称、邮箱和评论内容为必填项。
+          邮箱地址不会公开。显示名称、邮箱和评论内容为必填项。
         </p>
         {replyTarget && (
           <button
@@ -345,7 +390,7 @@ const NotionComments = ({ postId }) => {
           <div className='flex justify-end'>
             <button
               type='submit'
-              className='bg-gray-900 px-7 py-3 text-sm font-medium text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-300'
+              className='rounded-full bg-slate-900 px-8 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-800 dark:hover:bg-slate-700'
               disabled={submitting}
             >
               {submitting ? '提交中...' : replyTarget ? '发表回复' : '发表评论'}
