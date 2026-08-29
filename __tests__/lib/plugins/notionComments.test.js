@@ -12,13 +12,13 @@ describe('notionComments helpers', () => {
       validateCommentPayload({
         postId: 'post-1',
         content: 'hello',
-        author: 'Reader',
+        author: 'Reader@Example.com',
         nickname: 'Reader'
       })
     ).toMatchObject({
       ok: true,
       value: {
-        author: 'Reader',
+        author: 'reader@example.com',
         nickname: 'Reader'
       }
     })
@@ -27,7 +27,7 @@ describe('notionComments helpers', () => {
       validateCommentPayload({
         postId: 'post-1',
         content: '',
-        author: 'Reader'
+        author: 'reader@example.com'
       })
     ).toEqual({ ok: false, error: 'Invalid content' })
 
@@ -35,9 +35,9 @@ describe('notionComments helpers', () => {
       validateCommentPayload({
         postId: 'post-1',
         content: 'hello',
-        author: ''
+        author: 'bad-email'
       })
-    ).toEqual({ ok: false, error: 'Invalid author name' })
+    ).toEqual({ ok: false, error: 'Invalid author email' })
 
     expect(
       validateCommentPayload({
@@ -49,7 +49,7 @@ describe('notionComments helpers', () => {
       validateCommentPayload({
         postId: 'post-1',
         content: 'hello',
-        author: 'Reader',
+        author: 'reader@example.com',
         website: 'not-a-url'
       })
     ).toEqual({ ok: false, error: 'Invalid website' })

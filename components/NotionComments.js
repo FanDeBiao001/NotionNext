@@ -21,7 +21,8 @@ const getInitial = name => (name || '?').trim().slice(0, 1).toUpperCase()
 const NotionComments = ({ postId }) => {
   const [comments, setComments] = useState([])
   const [content, setContent] = useState('')
-  const [author, setAuthor] = useState('')
+  const [email, setEmail] = useState('')
+  const [nickname, setNickname] = useState('')
   const [website, setWebsite] = useState('')
   const [honeypot, setHoneypot] = useState('')
   const [rememberProfile, setRememberProfile] = useState(true)
@@ -59,7 +60,8 @@ const NotionComments = ({ postId }) => {
   useEffect(() => {
     try {
       const profile = JSON.parse(localStorage.getItem('notion-comment-profile'))
-      if (profile?.author) setAuthor(profile.author)
+      if (profile?.email) setEmail(profile.email)
+      if (profile?.nickname) setNickname(profile.nickname)
       if (profile?.website) setWebsite(profile.website)
     } catch {
       // A malformed browser cache should never block commenting.
@@ -72,7 +74,9 @@ const NotionComments = ({ postId }) => {
 
   const submitComment = async event => {
     event.preventDefault()
-    if (!content.trim() || !author.trim() || submitting) return
+    if (!content.trim() || !nickname.trim() || !email.trim() || submitting) {
+      return
+    }
 
     setSubmitting(true)
     setError('')
@@ -84,8 +88,8 @@ const NotionComments = ({ postId }) => {
         body: JSON.stringify({
           postId,
           content,
-          author,
-          nickname: author,
+          author: email,
+          nickname,
           parentId: replyTo,
           website,
           honeypot
@@ -98,7 +102,7 @@ const NotionComments = ({ postId }) => {
       if (rememberProfile) {
         localStorage.setItem(
           'notion-comment-profile',
-          JSON.stringify({ author, website })
+          JSON.stringify({ email, nickname, website })
         )
       } else {
         localStorage.removeItem('notion-comment-profile')
@@ -259,7 +263,7 @@ const NotionComments = ({ postId }) => {
           {replyTarget ? `回复 @${replyTarget.author}` : '发表回复'}
         </h3>
         <p className='mt-2 text-sm text-gray-500 dark:text-gray-400'>
-          显示名称和评论内容为必填项。
+          您的邮箱地址不会被公开。显示名称、邮箱和评论内容为必填项。
         </p>
         {replyTarget && (
           <button
@@ -301,23 +305,34 @@ const NotionComments = ({ postId }) => {
               <input
                 className='mt-3 w-full rounded-none border border-gray-300 bg-gray-50 p-3 text-base outline-none focus:border-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:focus:border-gray-300'
                 maxLength={40}
-                onChange={event => setAuthor(event.target.value)}
+                onChange={event => setNickname(event.target.value)}
                 required
-                value={author}
+                value={nickname}
               />
             </label>
             <label className='block text-sm font-medium text-gray-800 dark:text-gray-200'>
-              网站（可选）
+              邮箱 <span aria-hidden='true'>*</span>
               <input
                 className='mt-3 w-full rounded-none border border-gray-300 bg-gray-50 p-3 text-base outline-none focus:border-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:focus:border-gray-300'
-                maxLength={200}
-                onChange={event => setWebsite(event.target.value)}
-                placeholder='https://example.com'
-                type='url'
-                value={website}
+                maxLength={254}
+                onChange={event => setEmail(event.target.value)}
+                required
+                type='email'
+                value={email}
               />
             </label>
           </div>
+          <label className='block text-sm font-medium text-gray-800 dark:text-gray-200'>
+            网站（可选）
+            <input
+              className='mt-3 w-full rounded-none border border-gray-300 bg-gray-50 p-3 text-base outline-none focus:border-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:focus:border-gray-300'
+              maxLength={200}
+              onChange={event => setWebsite(event.target.value)}
+              placeholder='https://example.com'
+              type='url'
+              value={website}
+            />
+          </label>
           <label className='flex cursor-pointer items-center gap-3 text-sm text-gray-600 dark:text-gray-300'>
             <input
               checked={rememberProfile}
@@ -325,7 +340,7 @@ const NotionComments = ({ postId }) => {
               onChange={event => setRememberProfile(event.target.checked)}
               type='checkbox'
             />
-            在此浏览器中保存我的显示名称和网站地址，以便下次评论时使用。
+            在此浏览器中保存我的显示名称、邮箱地址和网站地址，以便下次评论时使用。
           </label>
           <div className='flex justify-end'>
             <button
