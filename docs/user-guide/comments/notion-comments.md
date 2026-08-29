@@ -2,7 +2,7 @@
 
 NotionComments 使用一个 Notion 数据库保存评论，适合不想额外部署 Twikoo、Waline 等评论后端的站点。
 
-这不是 Notion 页面右上角的官方评论区，而是通过 Notion API 写入你自己的评论数据库。访客只需要填写邮箱和评论内容，不需要登录 Notion。
+这不是 Notion 页面右上角的官方评论区，而是通过 Notion API 写入你自己的评论数据库。访客只需要填写显示名称和评论内容，不需要登录 Notion，也无需填写邮箱。
 
 ## 适合谁使用
 
@@ -43,7 +43,7 @@ Notion API 支持读取和创建页面评论，但它更适合工作区内部协
 - 文章评论和嵌套回复。
 - 回复展开/收起。
 - 评论列表加载更多。
-- 昵称、邮箱识别和首字母头像。
+- 显示名称、可选网站和首字母头像；不收集邮箱。
 - 可选审核状态：站长在 Notion 数据库里把 `Pending` 改成 `Approved` 后再展示。
 - 基础反垃圾：长度限制、蜜罐字段、同一 IP 简单频率限制。
 - 提交中、加载中、加载失败重试等基础交互。
@@ -64,15 +64,15 @@ Notion API 支持读取和创建页面评论，但它更适合工作区内部协
 | `ParentId`  | Text   | 父评论 ID，一级评论留空                   |
 | `Content`   | Text   | 评论正文                                  |
 | `IpAddress` | Text   | 访客 IP，用于排查滥用                     |
-| `Author`    | Email  | 访客邮箱，前缀会作为昵称显示              |
+| `Nickname`  | Text   | 访客填写的显示名称，用于前台展示          |
 | `Level`     | Number | 回复层级                                  |
 
 增强字段建议一起添加，复制模板的用户通常已经包含这些字段：
 
 | 字段        | 类型   | 说明                                               |
 | ----------- | ------ | -------------------------------------------------- |
-| `Nickname`  | Text   | 访客填写的昵称，优先用于前台展示                   |
-| `EmailHash` | Text   | 邮箱哈希，用于未来头像、会员识别或去重             |
+| `Website`   | URL    | 访客可选填写的网站地址                             |
+| `Author`    | Email  | 旧数据库兼容字段，前台不再收集或写入邮箱           |
 | `Status`    | Select | 审核状态，建议选项为 `Approved`、`Pending`、`Spam` |
 | `CreatedAt` | Date   | 评论提交时间                                       |
 | `UserAgent` | Text   | 浏览器 User-Agent，用于排查垃圾评论                |
@@ -157,6 +157,7 @@ Integration 可以理解成“给 NotionNext 使用的机器人账号”。Notio
 在 Vercel、Netlify、Zeabur、服务器 `.env` 等部署环境中添加：
 
 ```bash
+# 可选：Notion 评论默认已开启；设为 false 可关闭
 NEXT_PUBLIC_COMMENT_NOTION_ENABLE=true
 NOTION_COMMENT_DATABASE_ID=your_comment_database_id
 NOTION_TOKEN=secret_xxx
@@ -168,7 +169,7 @@ NOTION_COMMENT_RATE_LIMIT=5
 
 说明：
 
-- `NEXT_PUBLIC_COMMENT_NOTION_ENABLE`：开启 NotionComments。
+- `NEXT_PUBLIC_COMMENT_NOTION_ENABLE`：NotionComments 默认开启；设置为 `false` 可关闭。
 - `NOTION_COMMENT_DATABASE_ID`：评论数据库 ID。
 - `NOTION_TOKEN`：Notion integration token，是服务端密钥，不要加 `NEXT_PUBLIC_` 前缀。
 - `NOTION_COMMENT_REQUIRE_APPROVAL`：是否开启审核。设置为 `true` 后，新评论会写入 `Pending`，需要站长在 Notion 数据库中改成 `Approved` 才会显示。
@@ -190,7 +191,7 @@ https://www.notion.so/workspace/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx?v=yyyy
 
 1. 部署后打开任意文章页。
 2. 滚动到评论区，应该能看到 `Notion` 评论 Tab 或评论表单。
-3. 输入邮箱和评论内容并提交。
+3. 输入显示名称和评论内容并提交。
 4. 回到 Notion 评论数据库，确认新增了一条记录。
 5. 如果开启了审核，把这条记录的 `Status` 从 `Pending` 改为 `Approved`，刷新文章页后再确认显示。
 

@@ -22,8 +22,9 @@ const NotionComments = ({ postId }) => {
   const [comments, setComments] = useState([])
   const [content, setContent] = useState('')
   const [author, setAuthor] = useState('')
-  const [nickname, setNickname] = useState('')
   const [website, setWebsite] = useState('')
+  const [honeypot, setHoneypot] = useState('')
+  const [rememberProfile, setRememberProfile] = useState(true)
   const [replyTo, setReplyTo] = useState('')
   const [expandedReplies, setExpandedReplies] = useState({})
   const [visibleReplyCounts, setVisibleReplyCounts] = useState({})
@@ -55,6 +56,16 @@ const NotionComments = ({ postId }) => {
     void loadComments()
   }, [loadComments, postId])
 
+  useEffect(() => {
+    try {
+      const profile = JSON.parse(localStorage.getItem('notion-comment-profile'))
+      if (profile?.author) setAuthor(profile.author)
+      if (profile?.website) setWebsite(profile.website)
+    } catch {
+      // A malformed browser cache should never block commenting.
+    }
+  }, [])
+
   const commentTree = useMemo(() => buildCommentTree(comments), [comments])
   const visibleRoots = commentTree.slice(0, visibleRootCount)
   const replyTarget = comments.find(comment => comment.id === replyTo)
@@ -74,15 +85,24 @@ const NotionComments = ({ postId }) => {
           postId,
           content,
           author,
-          nickname,
+          nickname: author,
           parentId: replyTo,
-          website
+          website,
+          honeypot
         })
       })
       if (!response.ok) throw new Error('Failed to submit comment')
       const result = await response.json()
       setContent('')
       setReplyTo('')
+      if (rememberProfile) {
+        localStorage.setItem(
+          'notion-comment-profile',
+          JSON.stringify({ author, website })
+        )
+      } else {
+        localStorage.removeItem('notion-comment-profile')
+      }
       setNotice(
         result.pending ? '评论已提交，审核通过后显示。' : '评论已发布。'
       )
@@ -198,104 +218,11 @@ const NotionComments = ({ postId }) => {
   }
 
   return (
-    <div className='space-y-5'>
-      <section className='rounded-md border border-gray-200 p-4 dark:border-gray-700'>
-        <div className='mb-3 flex items-center justify-between gap-3'>
-          <h3 className='text-base font-semibold text-gray-900 dark:text-gray-100'>
-            评论
-          </h3>
-          <span className='text-sm text-gray-500 dark:text-gray-400'>
-            {comments.length} 条
-          </span>
-        </div>
-
-        {replyTarget && (
-          <div className='mb-3 flex items-center justify-between gap-3 rounded-md bg-gray-100 px-3 py-2 text-sm dark:bg-gray-800'>
-            <span className='truncate'>正在回复 @{replyTarget.author}</span>
-            <button
-              type='button'
-              className='shrink-0 text-gray-600 hover:underline dark:text-gray-300'
-              onClick={() => setReplyTo('')}
-            >
-              取消
-            </button>
-          </div>
-        )}
-
-        <form
-          className='space-y-3'
-          onSubmit={event => {
-            void submitComment(event)
-          }}
-        >
-          <textarea
-            ref={contentRef}
-            className='w-full rounded-md border border-gray-300 bg-transparent p-3 text-sm outline-none focus:border-blue-500 dark:border-gray-600'
-            maxLength={2000}
-            onChange={event => setContent(event.target.value)}
-            placeholder={replyTarget ? '写下回复...' : '写下你的评论...'}
-            required
-            rows={4}
-            value={content}
-          />
-          <input
-            aria-hidden='true'
-            autoComplete='off'
-            className='hidden'
-            onChange={event => setWebsite(event.target.value)}
-            tabIndex={-1}
-            value={website}
-          />
-          <div className='grid gap-2 sm:grid-cols-[1fr_1fr_auto]'>
-            <input
-              className='min-w-0 rounded-md border border-gray-300 bg-transparent p-2 text-sm outline-none focus:border-blue-500 dark:border-gray-600'
-              maxLength={40}
-              onChange={event => setNickname(event.target.value)}
-              placeholder='昵称'
-              value={nickname}
-            />
-            <input
-              className='min-w-0 rounded-md border border-gray-300 bg-transparent p-2 text-sm outline-none focus:border-blue-500 dark:border-gray-600'
-              maxLength={254}
-              onChange={event => setAuthor(event.target.value)}
-              placeholder='邮箱，不会公开'
-              required
-              type='email'
-              value={author}
-            />
-            <button
-              type='submit'
-              className='rounded-md bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-60'
-              disabled={submitting}
-            >
-              {submitting ? '提交中...' : replyTarget ? '回复' : '评论'}
-            </button>
-          </div>
-        </form>
-      </section>
-
-      {notice && (
-        <div className='rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-200'>
-          {notice}
-        </div>
-      )}
-
-      {error && (
-        <div className='flex items-center justify-between gap-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200'>
-          <span>{error}</span>
-          <button
-            type='button'
-            className='underline'
-            onClick={() => {
-              void loadComments()
-            }}
-          >
-            重试
-          </button>
-        </div>
-      )}
-
+    <div className='space-y-12'>
       <section>
+        <h3 className='mb-8 text-2xl font-semibold text-gray-900 dark:text-gray-100'>
+          {comments.length} 条评论
+        </h3>
         {loading ? (
           <div className='space-y-3'>
             {[0, 1, 2].map(item => (
@@ -321,11 +248,114 @@ const NotionComments = ({ postId }) => {
             )}
           </>
         ) : (
-          <p className='rounded-md border border-dashed border-gray-300 py-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400'>
+          <p className='border-y border-dashed border-gray-300 py-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400'>
             还没有评论，来写第一条吧。
           </p>
         )}
       </section>
+
+      <section className='border-t border-gray-200 pt-10 dark:border-gray-700'>
+        <h3 className='text-2xl font-semibold text-gray-900 dark:text-gray-100'>
+          {replyTarget ? `回复 @${replyTarget.author}` : '发表回复'}
+        </h3>
+        <p className='mt-2 text-sm text-gray-500 dark:text-gray-400'>
+          显示名称和评论内容为必填项。
+        </p>
+        {replyTarget && (
+          <button
+            type='button'
+            className='mt-3 text-sm text-gray-600 underline dark:text-gray-300'
+            onClick={() => setReplyTo('')}
+          >
+            取消回复
+          </button>
+        )}
+        <form
+          className='mt-7 space-y-5'
+          onSubmit={event => void submitComment(event)}
+        >
+          <label className='block text-sm font-medium text-gray-800 dark:text-gray-200'>
+            评论 <span aria-hidden='true'>*</span>
+            <textarea
+              ref={contentRef}
+              className='mt-3 min-h-48 w-full rounded-none border border-gray-300 bg-gray-50 p-4 text-base outline-none focus:border-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:focus:border-gray-300'
+              maxLength={2000}
+              onChange={event => setContent(event.target.value)}
+              placeholder={replyTarget ? '写下回复...' : '写下你的评论...'}
+              required
+              rows={8}
+              value={content}
+            />
+          </label>
+          <input
+            aria-hidden='true'
+            autoComplete='off'
+            className='hidden'
+            onChange={event => setHoneypot(event.target.value)}
+            tabIndex={-1}
+            value={honeypot}
+          />
+          <div className='grid gap-5 sm:grid-cols-2'>
+            <label className='block text-sm font-medium text-gray-800 dark:text-gray-200'>
+              显示名称 <span aria-hidden='true'>*</span>
+              <input
+                className='mt-3 w-full rounded-none border border-gray-300 bg-gray-50 p-3 text-base outline-none focus:border-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:focus:border-gray-300'
+                maxLength={40}
+                onChange={event => setAuthor(event.target.value)}
+                required
+                value={author}
+              />
+            </label>
+            <label className='block text-sm font-medium text-gray-800 dark:text-gray-200'>
+              网站（可选）
+              <input
+                className='mt-3 w-full rounded-none border border-gray-300 bg-gray-50 p-3 text-base outline-none focus:border-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:focus:border-gray-300'
+                maxLength={200}
+                onChange={event => setWebsite(event.target.value)}
+                placeholder='https://example.com'
+                type='url'
+                value={website}
+              />
+            </label>
+          </div>
+          <label className='flex cursor-pointer items-center gap-3 text-sm text-gray-600 dark:text-gray-300'>
+            <input
+              checked={rememberProfile}
+              className='h-4 w-4'
+              onChange={event => setRememberProfile(event.target.checked)}
+              type='checkbox'
+            />
+            在此浏览器中保存我的显示名称和网站地址，以便下次评论时使用。
+          </label>
+          <div className='flex justify-end'>
+            <button
+              type='submit'
+              className='bg-gray-900 px-7 py-3 text-sm font-medium text-white transition hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-300'
+              disabled={submitting}
+            >
+              {submitting ? '提交中...' : replyTarget ? '发表回复' : '发表评论'}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      {notice && (
+        <div className='border border-green-200 bg-green-50 p-3 text-sm text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-200'>
+          {notice}
+        </div>
+      )}
+      {error && (
+        <div className='flex items-center justify-between gap-3 border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200'>
+          <span>{error}</span>
+          <button
+            type='button'
+            className='underline'
+            onClick={() => void loadComments()}
+          >
+            重试
+          </button>
+        </div>
+      )}
     </div>
   )
 }

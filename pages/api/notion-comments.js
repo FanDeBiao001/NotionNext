@@ -1,5 +1,4 @@
 import { Client } from '@notionhq/client'
-import { createHash } from 'node:crypto'
 import {
   formatNotionComment,
   getPlainText,
@@ -50,9 +49,6 @@ const getDatabaseProperties = async notion => {
   const database = await notion.databases.retrieve({ database_id: databaseId })
   return database.properties || {}
 }
-
-const hashEmail = email =>
-  createHash('sha256').update(email).digest('hex').slice(0, 32)
 
 const fetchComments = async postId => {
   const notion = getClient()
@@ -131,7 +127,8 @@ export default async function handler(req, res) {
     }
 
     const properties = await getDatabaseProperties(notion)
-    const { postId, content, author, nickname, parentId } = validation.value
+    const { postId, content, author, nickname, parentId, website } =
+      validation.value
     const level = (await getParentLevel(notion, parentId, postId)) + 1
     const status = requireApproval ? 'Pending' : PUBLIC_COMMENT_STATUS
     const pageProperties = {
@@ -140,20 +137,24 @@ export default async function handler(req, res) {
         rich_text: parentId ? [{ text: { content: parentId } }] : []
       },
       Content: { rich_text: [{ text: { content } }] },
-      Author: { email: author },
       Level: { number: level },
       IpAddress: {
         rich_text: [{ text: { content: ip } }]
       }
     }
 
-    if (nickname && hasProperty(properties, 'Nickname', 'rich_text')) {
-      pageProperties.Nickname = { rich_text: [{ text: { content: nickname } }] }
-    }
-    if (hasProperty(properties, 'EmailHash', 'rich_text')) {
-      pageProperties.EmailHash = {
-        rich_text: [{ text: { content: hashEmail(author) } }]
+    if (hasProperty(properties, 'Nickname', 'rich_text')) {
+      pageProperties.Nickname = {
+        rich_text: [{ text: { content: nickname || author } }]
       }
+    }
+    // Keep legacy databases with an Author(email) column compatible without
+    // collecting an email address from visitors.
+    if (hasProperty(properties, 'Author', 'email')) {
+      pageProperties.Author = { email: null }
+    }
+    if (website && hasProperty(properties, 'Website', 'url')) {
+      pageProperties.Website = { url: website }
     }
     if (hasProperty(properties, 'Status', 'select')) {
       pageProperties.Status = { select: { name: status } }

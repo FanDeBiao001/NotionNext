@@ -8,7 +8,7 @@ module.exports = {
 
   // NotionComments: use a Notion database as comment storage
   COMMENT_NOTION_ENABLE:
-    process.env.NEXT_PUBLIC_COMMENT_NOTION_ENABLE === 'true' || false,
+    process.env.NEXT_PUBLIC_COMMENT_NOTION_ENABLE !== 'false',
 
   // artalk 评论插件
   COMMENT_ARTALK_SERVER: process.env.NEXT_PUBLIC_COMMENT_ARTALK_SERVER || '', // ArtalkServert后端地址 https://artalk.js.org/guide/deploy.html

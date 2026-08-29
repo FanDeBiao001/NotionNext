@@ -12,13 +12,13 @@ describe('notionComments helpers', () => {
       validateCommentPayload({
         postId: 'post-1',
         content: 'hello',
-        author: 'Reader@Example.com',
+        author: 'Reader',
         nickname: 'Reader'
       })
     ).toMatchObject({
       ok: true,
       value: {
-        author: 'reader@example.com',
+        author: 'Reader',
         nickname: 'Reader'
       }
     })
@@ -27,7 +27,7 @@ describe('notionComments helpers', () => {
       validateCommentPayload({
         postId: 'post-1',
         content: '',
-        author: 'reader@example.com'
+        author: 'Reader'
       })
     ).toEqual({ ok: false, error: 'Invalid content' })
 
@@ -35,15 +35,24 @@ describe('notionComments helpers', () => {
       validateCommentPayload({
         postId: 'post-1',
         content: 'hello',
-        author: 'bad-email'
+        author: ''
       })
-    ).toEqual({ ok: false, error: 'Invalid author email' })
+    ).toEqual({ ok: false, error: 'Invalid author name' })
 
     expect(
       validateCommentPayload({
-        website: 'https://spam.example'
+        honeypot: 'https://spam.example'
       })
     ).toMatchObject({ ok: true, spam: true })
+
+    expect(
+      validateCommentPayload({
+        postId: 'post-1',
+        content: 'hello',
+        author: 'Reader',
+        website: 'not-a-url'
+      })
+    ).toEqual({ ok: false, error: 'Invalid website' })
   })
 
   test('formats Notion database pages', () => {
