@@ -40,10 +40,18 @@ const readErrorDetail = async response => {
   }
 }
 
-const getUserFacingError = (fallback, error) => {
-  if (error instanceof Error) {
-    return error.message || fallback
+const getRequestErrorMessage = async (response, fallback) => {
+  const payload = await readErrorDetail(response)
+  const internalMessage = [payload.error, payload.detail, payload.hint]
+    .filter(Boolean)
+    .join(' ')
+
+  if (/invalid author email/i.test(internalMessage)) {
+    return '请输入有效的邮箱地址。'
   }
+
+  if (response.status === 429) return '操作过于频繁，请稍后再试。'
+  if (response.status === 400) return '提交信息有误，请检查后重试。'
   return fallback
 }
 
@@ -73,17 +81,13 @@ const NotionComments = ({ postId }) => {
         `/api/notion-comments?postId=${encodeURIComponent(postId)}`
       )
       if (!response.ok) {
-        const payload = await readErrorDetail(response)
         throw new Error(
-          payload.detail ||
-            payload.hint ||
-            payload.error ||
-            `Failed to load comments (${response.status})`
+          await getRequestErrorMessage(response, '评论加载失败，请稍后重试。')
         )
       }
       setComments(await response.json())
-    } catch (error) {
-      setError(getUserFacingError('评论加载失败，请重试', error))
+    } catch {
+      setError('评论加载失败，请稍后重试。')
     } finally {
       setLoading(false)
     }
@@ -133,12 +137,8 @@ const NotionComments = ({ postId }) => {
         })
       })
       if (!response.ok) {
-        const payload = await readErrorDetail(response)
         throw new Error(
-          payload.detail ||
-            payload.hint ||
-            payload.error ||
-            `Failed to submit comment (${response.status})`
+          await getRequestErrorMessage(response, '评论提交失败，请稍后重试。')
         )
       }
       const result = await response.json()
@@ -160,7 +160,9 @@ const NotionComments = ({ postId }) => {
       }
       await loadComments()
     } catch (error) {
-      setError(getUserFacingError('评论提交失败，请稍后重试', error))
+      setError(
+        error instanceof Error ? error.message : '评论提交失败，请稍后重试。'
+      )
     } finally {
       setSubmitting(false)
     }
@@ -303,7 +305,7 @@ const NotionComments = ({ postId }) => {
         )}
       </section>
 
-      <section className='border-t border-gray-200 pt-10 dark:border-gray-700'>
+      <section className='pt-10'>
         <h3 className='text-2xl font-semibold text-gray-900 dark:text-gray-100'>
           {replyTarget ? `回复 @${replyTarget.author}` : '发表回复'}
         </h3>

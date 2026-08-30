@@ -38,9 +38,6 @@ const getErrorHint = error => {
   ) {
     return '请确认 Vercel 的 Production 或 Preview 环境变量已配置，并重新部署当前站点。'
   }
-  if (error?.code === 'EMAIL_FIELD_MISSING') {
-    return '请在评论数据库中添加 Author(email) 或 EmailHash(rich_text) 字段。'
-  }
   const status = error?.status || error?.statusCode || error?.response?.status
   if (status === 401 || status === 403) {
     return '检查 NOTION_TOKEN 是否正确，以及评论数据库是否已共享给对应 integration。'
@@ -116,6 +113,7 @@ export const validateCommentDatabaseSchema = properties => {
     ParentId: 'rich_text',
     IpAddress: 'rich_text'
   }
+  const expectedTypes = { ...requiredTypes, ...optionalTypes }
 
   const mismatches = [
     ...Object.entries(requiredTypes)
@@ -158,27 +156,6 @@ export const validateCommentDatabaseSchema = properties => {
   }
 }
 
-export const validateCommentEmailStorageSchema = properties => {
-  const canStoreEmail =
-    hasProperty(properties, 'Author', 'email') ||
-    hasProperty(properties, 'EmailHash', 'rich_text')
-
-  if (!canStoreEmail) {
-    const error = new Error(
-      'Comment database needs Author(email) or EmailHash(rich_text) to store the submitted email'
-    )
-    error.statusCode = 400
-    error.code = 'EMAIL_FIELD_MISSING'
-    error.details = {
-      requiredTypes: {
-        Author: 'email',
-        EmailHash: 'rich_text'
-      }
-    }
-    throw error
-  }
-}
-
 export const buildEmailProperties = (properties, author) => {
   const emailProperties = {}
   const hasAuthorField = hasProperty(properties, 'Author', 'email')
@@ -193,7 +170,7 @@ export const buildEmailProperties = (properties, author) => {
       rich_text: [
         {
           text: {
-            content: hasAuthorField ? hashEmail(author) : author
+            content: hashEmail(author)
           }
         }
       ]
@@ -288,23 +265,26 @@ export default async function handler(req, res) {
 
     const properties = await getDatabaseProperties(notion)
     validateCommentDatabaseSchema(properties)
-    validateCommentEmailStorageSchema(properties)
     const { postId, content, author, nickname, parentId, website } =
       validation.value
     const level = (await getParentLevel(notion, parentId, postId)) + 1
     const status = requireApproval ? 'Pending' : PUBLIC_COMMENT_STATUS
     const pageProperties = {
       PostId: { title: [{ text: { content: postId } }] },
-      ParentId: {
-        rich_text: parentId ? [{ text: { content: parentId } }] : []
-      },
       Content: { rich_text: [{ text: { content } }] },
-      Level: { number: level },
-      IpAddress: {
+      Level: { number: level }
+    }
+
+    if (hasProperty(properties, 'ParentId', 'rich_text')) {
+      pageProperties.ParentId = {
+        rich_text: parentId ? [{ text: { content: parentId } }] : []
+      }
+    }
+    if (hasProperty(properties, 'IpAddress', 'rich_text')) {
+      pageProperties.IpAddress = {
         rich_text: [{ text: { content: ip } }]
       }
     }
-
     if (hasProperty(properties, 'Nickname', 'rich_text')) {
       pageProperties.Nickname = {
         rich_text: [{ text: { content: nickname || author || 'anonymous' } }]
