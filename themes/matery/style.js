@@ -18,6 +18,32 @@ const Style = () => {
             background-color: #020617;
         }
 
+        .matery-home-entrance {
+            transform-origin: center;
+            animation: matery-home-entrance-reveal 1.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+            will-change: transform, filter;
+            background: #000;
+        }
+
+        @keyframes matery-home-entrance-reveal {
+            from {
+                transform: scale(1.12);
+                filter: blur(18px);
+            }
+            to {
+                transform: scale(1);
+                filter: blur(0);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .matery-home-entrance {
+                animation: none;
+                transform: none;
+                filter: none;
+            }
+        }
+
         /* 设置了从上到下的渐变黑色 */
         #theme-matery .header-cover::before {
             content: '';

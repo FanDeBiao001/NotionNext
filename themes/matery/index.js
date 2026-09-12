@@ -11,7 +11,7 @@ import { isBrowser } from '@/lib/utils'
 import dynamic from 'next/dynamic'
 import SmartLink from '@/components/SmartLink'
 import { useRouter } from 'next/router'
-import { createContext, useContext, useEffect, useRef } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import Announcement from './components/Announcement'
 import ArticleAdjacent from './components/ArticleAdjacent'
 import ArticleCopyright from './components/ArticleCopyright'
@@ -65,10 +65,27 @@ const LayoutBase = props => {
   const { children, post } = props
   const { fullWidth } = useGlobal()
   const router = useRouter()
+  const shouldAnimate =
+    router.pathname === '/' && siteConfig('HOME_ENTRANCE_ANIMATION', true)
+  const [showEntrance, setShowEntrance] = useState(false)
   // 加载wow动画
   useEffect(() => {
     loadWowJS()
   }, [])
+  useEffect(() => {
+    if (!showEntrance) return
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setShowEntrance(false)
+      return
+    }
+
+    const timer = window.setTimeout(() => {
+      setShowEntrance(false)
+    }, 1250)
+
+    return () => window.clearTimeout(timer)
+  }, [showEntrance])
   const containerSlot =
     router.route === '/' ? (
       <Announcement {...props} />
@@ -96,8 +113,13 @@ const LayoutBase = props => {
         <Style />
 
         {/* 全屏固定星空背景 */}
-        <div className='fixed inset-0 z-0'>
-          <ParticleNetwork />
+        <div
+          className={`fixed inset-0 z-0 ${showEntrance ? 'matery-home-entrance' : ''}`}>
+          <ParticleNetwork
+            onReady={() => {
+              if (shouldAnimate) setShowEntrance(true)
+            }}
+          />
         </div>
 
         {/* 顶部导航栏 */}

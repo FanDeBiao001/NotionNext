@@ -7,11 +7,14 @@ const PARTICLE_COUNT = 260
 const CONNECT_DISTANCE = 1.4
 const SHOOTING_STAR_COUNT = 3
 const RING_SIZE = 40
+const HEAD_CAP_SEGMENTS = 10
 const RIBBON_Z = 2.97
 const MAX_RIBBON_WIDTH = 0.18
 
-export default function ParticleNetwork() {
+export default function ParticleNetwork({ onReady }) {
   const mountRef = useRef(null)
+  const onReadyRef = useRef(onReady)
+  onReadyRef.current = onReady
 
   useEffect(() => {
     const width = window.innerWidth
@@ -27,6 +30,7 @@ export default function ParticleNetwork() {
     renderer.setSize(width, height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     mountRef.current.appendChild(renderer.domElement)
+    onReadyRef.current?.()
 
     // Glow texture
     function createGlowTexture(innerColor, outerColor, size = 64) {
@@ -44,7 +48,6 @@ export default function ParticleNetwork() {
     }
 
     const glowTex = createGlowTexture('rgba(160,180,255,1)', 'rgba(160,180,255,0)')
-    const starTex = createGlowTexture('rgba(255,255,255,1)', 'rgba(255,255,255,0)', 32)
 
     // ==========================================
     // Particles — with per-particle brightness variation (vertexColors)
@@ -138,27 +141,26 @@ export default function ParticleNetwork() {
     // ==========================================
     // Shooting star — pre-allocated slot pool (no per-spawn allocations)
     // ==========================================
-    const MAX_RIBBON_VERTS = RING_SIZE * 2
-    const MAX_RIBBON_INDICES = (RING_SIZE - 1) * 6
-
-    // Shared index buffer for all ribbon meshes
-    const ribbonIdxArr = new Uint16Array(MAX_RIBBON_INDICES)
-    for (let i = 0; i < RING_SIZE - 1; i++) {
-      const vi = i * 2
-      const off = i * 6
-      ribbonIdxArr[off] = vi
-      ribbonIdxArr[off + 1] = vi + 1
-      ribbonIdxArr[off + 2] = vi + 2
-      ribbonIdxArr[off + 3] = vi + 1
-      ribbonIdxArr[off + 4] = vi + 3
-      ribbonIdxArr[off + 5] = vi + 2
-    }
+    const MAX_RIBBON_VERTS = RING_SIZE * 2 + HEAD_CAP_SEGMENTS + 2
+    const MAX_RIBBON_INDICES =
+      (RING_SIZE - 1) * 6 + HEAD_CAP_SEGMENTS * 3
 
     function createStarSlot() {
       // Ribbon
       const ribbonPosArr = new Float32Array(MAX_RIBBON_VERTS * 3)
       const ribbonColArr = new Float32Array(MAX_RIBBON_VERTS * 4)
       const ribbonUvArr = new Float32Array(MAX_RIBBON_VERTS * 2)
+      const ribbonIdxArr = new Uint16Array(MAX_RIBBON_INDICES)
+      for (let i = 0; i < RING_SIZE - 1; i++) {
+        const vi = i * 2
+        const off = i * 6
+        ribbonIdxArr[off] = vi
+        ribbonIdxArr[off + 1] = vi + 1
+        ribbonIdxArr[off + 2] = vi + 2
+        ribbonIdxArr[off + 3] = vi + 1
+        ribbonIdxArr[off + 4] = vi + 3
+        ribbonIdxArr[off + 5] = vi + 2
+      }
       const ribbonGeo = new THREE.BufferGeometry()
       ribbonGeo.setAttribute('position', new THREE.BufferAttribute(ribbonPosArr, 3))
       ribbonGeo.setAttribute('color', new THREE.BufferAttribute(ribbonColArr, 4))
@@ -176,40 +178,14 @@ export default function ParticleNetwork() {
       ribbon.position.z = -1000
       scene.add(ribbon)
 
-      // Head — Sprite (avoids WebGL Points gl_PointCoord quirks)
-      const headMat = new THREE.SpriteMaterial({
-        map: starTex, color: '#ffffff',
-        blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false,
-        transparent: true, opacity: 0, toneMapped: false
-      })
-      const head = new THREE.Sprite(headMat)
-      head.scale.set(0.22, 0.22, 1)
-      head.renderOrder = 11
-      head.frustumCulled = false
-      head.position.z = -1000
-      scene.add(head)
-
-      // Halo — Sprite
-      const haloMat = new THREE.SpriteMaterial({
-        map: starTex, color: '#aab6ff',
-        blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false,
-        transparent: true, opacity: 0, toneMapped: false
-      })
-      const halo = new THREE.Sprite(haloMat)
-      halo.scale.set(0.55, 0.55, 1)
-      halo.renderOrder = 10
-      halo.frustumCulled = false
-      halo.position.z = -1000
-      scene.add(halo)
-
       // Flat ring buffer: x0,y0,x1,y1,...
       const ringData = new Float32Array(RING_SIZE * 2)
 
       return {
-        ribbon, ribbonGeo, ribbonPosArr, ribbonColArr, ribbonUvArr, ribbonMat,
-        head, headMat,
-        halo, haloMat,
+        ribbon, ribbonGeo, ribbonPosArr, ribbonColArr, ribbonUvArr,
+        ribbonIdxArr, ribbonMat,
         ringData, ringIdx: 0, ringLen: 0,
+        x: 0, y: 0,
         dirX: 0, dirY: 0, speed: 0,
         life: 0, active: false, spawnTimer: 0
       }
@@ -231,9 +207,8 @@ export default function ParticleNetwork() {
         ? (-Math.PI / 4 - Math.random() * 0.2)
         : (-3 * Math.PI / 4 + Math.random() * 0.2)
 
-      // Set sprite positions
-      slot.head.position.set(x, y, 3)
-      slot.halo.position.set(x, y, 2.98)
+      slot.x = x
+      slot.y = y
 
       slot.ringIdx = 0
       slot.ringLen = 0
@@ -247,21 +222,12 @@ export default function ParticleNetwork() {
 
       // Bring into view
       slot.ribbon.position.z = 0
-      slot.head.position.z = 3
-      slot.halo.position.z = 2.98
-
-      slot.headMat.opacity = 1
-      slot.haloMat.opacity = 0.35
     }
 
     function despawnStar(slot) {
       slot.active = false
       slot.ribbon.position.z = -1000
-      slot.head.position.z = -1000
-      slot.halo.position.z = -1000
       slot.ribbonGeo.setDrawRange(0, 0)
-      slot.headMat.opacity = 0
-      slot.haloMat.opacity = 0
       slot.spawnTimer = 10 + Math.random() * 5
     }
 
@@ -272,7 +238,10 @@ export default function ParticleNetwork() {
         return
       }
 
-      const { ringData, ringIdx, ribbonPosArr, ribbonColArr, ribbonUvArr, ribbonGeo } = slot
+      const {
+        ringData, ringIdx, ribbonPosArr, ribbonColArr, ribbonUvArr,
+        ribbonIdxArr, ribbonGeo
+      } = slot
       const { dirX, dirY, life } = slot
 
       let k = 0
@@ -295,20 +264,14 @@ export default function ParticleNetwork() {
         const ny = dx / (dl || 1)
 
         const ratio = p / (n - 1)
-        const halfW = 0.5 * MAX_RIBBON_WIDTH * Math.pow(ratio, 0.7)
-
-        // Piecewise color: tail transparent → mid blue-white → head white
-        let cr, cg, cb, ca
-        if (ratio > 0.6) {
-          const t = (ratio - 0.6) / 0.4
-          cr = 0.72 + t * 0.28; cg = 0.78 + t * 0.22; cb = 1.0; ca = 0.85 + t * 0.15
-        } else if (ratio > 0.25) {
-          const t = (ratio - 0.25) / 0.35
-          cr = 0.45 + t * 0.27; cg = 0.50 + t * 0.28; cb = 1.0; ca = 0.35 + t * 0.50
-        } else {
-          const t = ratio / 0.25
-          cr = 0.20 + t * 0.25; cg = 0.25 + t * 0.25; cb = 0.80 + t * 0.20; ca = t * 0.35
-        }
+        // A monotonic width and color ramp prevents a brighter bulge from
+        // appearing halfway along a single meteor trail.
+        const intensity = Math.pow(ratio, 1.15)
+        const halfW = 0.5 * MAX_RIBBON_WIDTH * Math.pow(ratio, 0.72)
+        const cr = 0.28 + intensity * 0.48
+        const cg = 0.34 + intensity * 0.48
+        const cb = 0.82 + intensity * 0.18
+        let ca = 0.78 * Math.pow(ratio, 1.08)
         ca *= life
 
         // Left vertex
@@ -329,10 +292,79 @@ export default function ParticleNetwork() {
         k++
       }
 
-      ribbonGeo.setDrawRange(0, (n - 1) * 6)
+      // Append a forward-facing semicircle to the same mesh. It shares the
+      // ribbon's final edge, so there is no overlap, seam, or separate sprite.
+      const headRadius = MAX_RIBBON_WIDTH * 0.5
+      const forwardLen = Math.hypot(dirX, dirY) || 1
+      const fx = dirX / forwardLen
+      const fy = dirY / forwardLen
+      const nx = -fy
+      const ny = fx
+      const centerIndex = k
+      const arcStartIndex = centerIndex + 1
+      const headR = 0.76
+      const headG = 0.82
+      const headB = 1
+      const headA = 0.78 * life
+
+      ribbonPosArr[k * 3] = slot.x
+      ribbonPosArr[k * 3 + 1] = slot.y
+      ribbonPosArr[k * 3 + 2] = RIBBON_Z
+      ribbonColArr[k * 4] = headR
+      ribbonColArr[k * 4 + 1] = headG
+      ribbonColArr[k * 4 + 2] = headB
+      ribbonColArr[k * 4 + 3] = headA
+      ribbonUvArr[k * 2] = 0.5
+      ribbonUvArr[k * 2 + 1] = 0.5
+      k++
+
+      for (let s = 0; s <= HEAD_CAP_SEGMENTS; s++) {
+        const theta = Math.PI / 2 - (Math.PI * s) / HEAD_CAP_SEGMENTS
+        const along = Math.cos(theta)
+        const across = Math.sin(theta)
+        ribbonPosArr[k * 3] =
+          slot.x + (fx * along + nx * across) * headRadius
+        ribbonPosArr[k * 3 + 1] =
+          slot.y + (fy * along + ny * across) * headRadius
+        ribbonPosArr[k * 3 + 2] = RIBBON_Z
+        ribbonColArr[k * 4] = headR
+        ribbonColArr[k * 4 + 1] = headG
+        ribbonColArr[k * 4 + 2] = headB
+        ribbonColArr[k * 4 + 3] = headA
+        ribbonUvArr[k * 2] = 0.5 + across * 0.5
+        ribbonUvArr[k * 2 + 1] = 0.5 - along * 0.5
+        k++
+      }
+
+      const stripIndexCount = (n - 1) * 6
+      // Cap indices occupy a moving offset while the trail is growing. Restore
+      // every active strip segment first so indices written by the previous
+      // frame can never leak into the ribbon body.
+      for (let i = 0; i < n - 1; i++) {
+        const vi = i * 2
+        const off = i * 6
+        ribbonIdxArr[off] = vi
+        ribbonIdxArr[off + 1] = vi + 1
+        ribbonIdxArr[off + 2] = vi + 2
+        ribbonIdxArr[off + 3] = vi + 1
+        ribbonIdxArr[off + 4] = vi + 3
+        ribbonIdxArr[off + 5] = vi + 2
+      }
+      for (let s = 0; s < HEAD_CAP_SEGMENTS; s++) {
+        const off = stripIndexCount + s * 3
+        ribbonIdxArr[off] = centerIndex
+        ribbonIdxArr[off + 1] = arcStartIndex + s
+        ribbonIdxArr[off + 2] = arcStartIndex + s + 1
+      }
+
+      ribbonGeo.setDrawRange(
+        0,
+        stripIndexCount + HEAD_CAP_SEGMENTS * 3
+      )
       ribbonGeo.attributes.position.needsUpdate = true
       ribbonGeo.attributes.color.needsUpdate = true
       ribbonGeo.attributes.uv.needsUpdate = true
+      ribbonGeo.index.needsUpdate = true
     }
 
     // ==========================================
@@ -377,11 +409,8 @@ export default function ParticleNetwork() {
 
           slot.life -= 0.0018
 
-          // Move head + halo sprites
-          slot.head.position.x += slot.dirX
-          slot.head.position.y += slot.dirY
-          slot.halo.position.x = slot.head.position.x
-          slot.halo.position.y = slot.head.position.y
+          slot.x += slot.dirX
+          slot.y += slot.dirY
 
           // Turbulence
           slot.dirX += (Math.random() - 0.5) * 0.0006
@@ -389,19 +418,14 @@ export default function ParticleNetwork() {
           const len = Math.hypot(slot.dirX, slot.dirY) || 1
           slot.dirX = (slot.dirX / len) * slot.speed
           slot.dirY = (slot.dirY / len) * slot.speed
-
-          // Ring buffer — use Sprite position (headArr no longer exists)
-          const hx = slot.head.position.x
-          const hy = slot.head.position.y
+          const hx = slot.x
+          const hy = slot.y
           slot.ringData[slot.ringIdx * 2] = hx
           slot.ringData[slot.ringIdx * 2 + 1] = hy
           slot.ringIdx = (slot.ringIdx + 1) % RING_SIZE
           if (slot.ringLen < RING_SIZE) slot.ringLen++
 
           buildRibbon(slot)
-
-          slot.headMat.opacity = Math.max(0, slot.life)
-          slot.haloMat.opacity = Math.max(0, slot.life) * 0.35
 
           if (slot.life <= 0 || Math.abs(hx) > 8.5 || Math.abs(hy) > 5.5) {
             despawnStar(slot)
@@ -446,15 +470,10 @@ export default function ParticleNetwork() {
       lineGeo.dispose()
       lineMaterial.dispose()
       glowTex.dispose()
-      starTex.dispose()
       for (const slot of starSlots) {
         scene.remove(slot.ribbon)
-        scene.remove(slot.head)
-        scene.remove(slot.halo)
         slot.ribbonGeo.dispose()
         slot.ribbonMat.dispose()
-        slot.headMat.dispose()
-        slot.haloMat.dispose()
       }
       if (mountRef.current && mountRef.current.contains(renderer.domElement)) {
         mountRef.current.removeChild(renderer.domElement)

@@ -2,6 +2,10 @@
  * 网站美化动效相关
  */
 module.exports = {
+  // 首页进入时，当前主题背景由放大、模糊状态恢复到正常状态
+  HOME_ENTRANCE_ANIMATION:
+    process.env.NEXT_PUBLIC_HOME_ENTRANCE_ANIMATION !== 'false',
+
   // 鼠标点击烟花特效
   FIREWORKS: process.env.NEXT_PUBLIC_FIREWORKS || false, // 开关
   // 烟花色彩，感谢 https://github.com/Vixcity 提交的色彩
