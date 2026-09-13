@@ -12,7 +12,10 @@ const PaginationNumber = ({ page, totalPage }) => {
   const router = useRouter()
   const currentPage = +page
   const showNext = page < totalPage
-  const pagePrefix = router.asPath.split('?')[0].replace(/\/page\/[1-9]\d*/, '').replace(/\/$/, '')
+  const pagePrefix = router.asPath
+    .split(/[?#]/)[0]
+    .replace(/\/page\/[1-9]\d*/, '')
+    .replace(/\/$/, '')
   const pages = generatePages(pagePrefix, page, currentPage, totalPage)
 
   return (
