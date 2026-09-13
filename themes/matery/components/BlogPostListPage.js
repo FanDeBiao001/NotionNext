@@ -16,12 +16,12 @@ const BlogPostListPage = ({ page = 1, posts = [], postCount, siteInfo }) => {
   const { NOTION_CONFIG } = useGlobal()
   const POSTS_PER_PAGE = siteConfig('POSTS_PER_PAGE', null, NOTION_CONFIG)
   const totalPage = Math.ceil(postCount / POSTS_PER_PAGE)
-  const showPagination = postCount >= POSTS_PER_PAGE
+  const showPagination = totalPage > 1
   if (!posts || posts.length === 0 || page > totalPage) {
     return <BlogPostListEmpty />
   } else {
     return (
-      <div className='w-full'>
+      <div id='posts-wrapper' className='w-full scroll-mt-20'>
         <div className='pt-6'></div>
         {/* 文章列表 */}
         <div className='pt-4 flex flex-wrap pb-12'>

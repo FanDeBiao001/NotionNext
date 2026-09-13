@@ -33,7 +33,7 @@ const ReadingHome = ({
   const topics = categoryOptions.filter(topic => topic?.name).slice(0, 6)
 
   return (
-    <div className='w-full pb-12'>
+    <div id='posts-wrapper' className='w-full scroll-mt-20 pb-12'>
       {startPosts.length > 0 && (
         <ReadingSection
           id='start-here'

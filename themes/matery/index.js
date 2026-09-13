@@ -218,7 +218,7 @@ const LayoutSearch = props => {
       {!currentSearch ? (
         <SearchNave {...props} />
       ) : (
-        <div id='posts-wrapper'>
+        <div>
           {siteConfig('POST_LIST_STYLE') === 'page' ? (
             <BlogPostListPage {...props} />
           ) : (

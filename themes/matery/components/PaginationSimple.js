@@ -21,7 +21,8 @@ const PaginationSimple = ({ page, totalPage }) => {
             currentPage - 1 === 1
               ? `${pagePrefix}/`
               : `${pagePrefix}/page/${currentPage - 1}`,
-          query: router.query.s ? { s: router.query.s } : {}
+          query: router.query.s ? { s: router.query.s } : {},
+          hash: 'posts-wrapper'
         }}
         passHref
         legacyBehavior>
@@ -36,7 +37,8 @@ const PaginationSimple = ({ page, totalPage }) => {
       <SmartLink
         href={{
           pathname: `${pagePrefix}/page/${currentPage + 1}`,
-          query: router.query.s ? { s: router.query.s } : {}
+          query: router.query.s ? { s: router.query.s } : {},
+          hash: 'posts-wrapper'
         }}
         passHref
         legacyBehavior>

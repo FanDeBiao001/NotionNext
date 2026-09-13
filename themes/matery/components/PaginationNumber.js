@@ -23,7 +23,8 @@ const PaginationNumber = ({ page, totalPage }) => {
             pathname: currentPage === 2
               ? `${pagePrefix}/`
               : `${pagePrefix}/page/${currentPage - 1}`,
-            query: router.query.s ? { s: router.query.s } : {}
+            query: router.query.s ? { s: router.query.s } : {},
+            hash: 'posts-wrapper'
           }}
           rel="prev"
           className={`${currentPage === 1 ? 'invisible' : 'block'} pb-0.5 border-white dark:border-indigo-700 hover:border-indigo-400 dark:hover:border-indigo-400 w-6 text-center cursor-pointer duration-200  hover:font-bold`}>
@@ -38,7 +39,8 @@ const PaginationNumber = ({ page, totalPage }) => {
         <SmartLink
           href={{
             pathname: `${pagePrefix}/page/${currentPage + 1}`,
-            query: router.query.s ? { s: router.query.s } : {}
+            query: router.query.s ? { s: router.query.s } : {},
+            hash: 'posts-wrapper'
           }}
           rel="next"
           className={`${+showNext ? 'block' : 'invisible'} pb-0.5 border-b border-indigo-300 dark:border-indigo-700 hover:border-indigo-400 dark:hover:border-indigo-400 w-6 text-center cursor-pointer duration-500  hover:font-bold`}>
@@ -53,7 +55,10 @@ const PaginationNumber = ({ page, totalPage }) => {
 function getPageElement(page, currentPage, pagePrefix) {
   return (
     (<SmartLink
-      href={page === 1 ? `${pagePrefix}/` : `${pagePrefix}/page/${page}`}
+      href={{
+        pathname: page === 1 ? `${pagePrefix}/` : `${pagePrefix}/page/${page}`,
+        hash: 'posts-wrapper'
+      }}
       key={page}
       passHref
       className={
