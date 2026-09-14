@@ -11,10 +11,12 @@ const HEAD_CAP_SEGMENTS = 10
 const RIBBON_Z = 2.97
 const MAX_RIBBON_WIDTH = 0.18
 
-export default function ParticleNetwork({ onReady }) {
+export default function ParticleNetwork({ onReady, meteorsEnabled = true }) {
   const mountRef = useRef(null)
   const onReadyRef = useRef(onReady)
+  const meteorsEnabledRef = useRef(meteorsEnabled)
   onReadyRef.current = onReady
+  meteorsEnabledRef.current = meteorsEnabled
 
   useEffect(() => {
     const width = window.innerWidth
@@ -30,7 +32,6 @@ export default function ParticleNetwork({ onReady }) {
     renderer.setSize(width, height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     mountRef.current.appendChild(renderer.domElement)
-    onReadyRef.current?.()
 
     // Glow texture
     function createGlowTexture(innerColor, outerColor, size = 64) {
@@ -385,6 +386,7 @@ export default function ParticleNetwork({ onReady }) {
     // ==========================================
     let baseRotY = 0, baseRotX = 0
     let animationId
+    let hasRenderedFirstFrame = false
 
     function animate() {
       animationId = requestAnimationFrame(animate)
@@ -400,35 +402,37 @@ export default function ParticleNetwork({ onReady }) {
 
       // Update shooting stars
       try {
-        for (const slot of starSlots) {
-          if (!slot.active) {
-            slot.spawnTimer -= 0.016
-            if (slot.spawnTimer <= 0) spawnStar(slot)
-            continue
-          }
+        if (meteorsEnabledRef.current) {
+          for (const slot of starSlots) {
+            if (!slot.active) {
+              slot.spawnTimer -= 0.016
+              if (slot.spawnTimer <= 0) spawnStar(slot)
+              continue
+            }
 
-          slot.life -= 0.0018
+            slot.life -= 0.0018
 
-          slot.x += slot.dirX
-          slot.y += slot.dirY
+            slot.x += slot.dirX
+            slot.y += slot.dirY
 
-          // Turbulence
-          slot.dirX += (Math.random() - 0.5) * 0.0006
-          slot.dirY += (Math.random() - 0.5) * 0.0006
-          const len = Math.hypot(slot.dirX, slot.dirY) || 1
-          slot.dirX = (slot.dirX / len) * slot.speed
-          slot.dirY = (slot.dirY / len) * slot.speed
-          const hx = slot.x
-          const hy = slot.y
-          slot.ringData[slot.ringIdx * 2] = hx
-          slot.ringData[slot.ringIdx * 2 + 1] = hy
-          slot.ringIdx = (slot.ringIdx + 1) % RING_SIZE
-          if (slot.ringLen < RING_SIZE) slot.ringLen++
+            // Turbulence
+            slot.dirX += (Math.random() - 0.5) * 0.0006
+            slot.dirY += (Math.random() - 0.5) * 0.0006
+            const len = Math.hypot(slot.dirX, slot.dirY) || 1
+            slot.dirX = (slot.dirX / len) * slot.speed
+            slot.dirY = (slot.dirY / len) * slot.speed
+            const hx = slot.x
+            const hy = slot.y
+            slot.ringData[slot.ringIdx * 2] = hx
+            slot.ringData[slot.ringIdx * 2 + 1] = hy
+            slot.ringIdx = (slot.ringIdx + 1) % RING_SIZE
+            if (slot.ringLen < RING_SIZE) slot.ringLen++
 
-          buildRibbon(slot)
+            buildRibbon(slot)
 
-          if (slot.life <= 0 || Math.abs(hx) > 8.5 || Math.abs(hy) > 5.5) {
-            despawnStar(slot)
+            if (slot.life <= 0 || Math.abs(hx) > 8.5 || Math.abs(hy) > 5.5) {
+              despawnStar(slot)
+            }
           }
         }
       } catch (e) {
@@ -436,6 +440,10 @@ export default function ParticleNetwork({ onReady }) {
       }
 
       renderer.render(scene, camera)
+      if (!hasRenderedFirstFrame) {
+        hasRenderedFirstFrame = true
+        onReadyRef.current?.()
+      }
     }
     animate()
 

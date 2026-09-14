@@ -18,29 +18,118 @@ const Style = () => {
             background-color: #020617;
         }
 
-        .matery-home-entrance {
+        .matery-home-scene {
             transform-origin: center;
-            animation: matery-home-entrance-reveal 1.25s cubic-bezier(0.22, 1, 0.36, 1) both;
-            will-change: transform, filter;
-            background: #000;
+            background: #020617;
         }
 
-        @keyframes matery-home-entrance-reveal {
+        .matery-home-entrance-surface {
+            transform-origin: center center;
+        }
+
+        .matery-home-entrance-waiting,
+        #theme-matery.matery-home-phase-waiting #header {
+            transform: scale(1.14) translateZ(0);
+            filter: blur(16px);
+            will-change: transform, filter;
+        }
+
+        #theme-matery.matery-home-phase-waiting #sticky-nav,
+        #theme-matery.matery-home-phase-waiting #wrapper,
+        #theme-matery.matery-home-phase-waiting .matery-home-float-buttons,
+        #theme-matery.matery-home-phase-waiting footer {
+            filter: blur(16px);
+            will-change: filter;
+        }
+
+        .matery-home-entrance-playing,
+        #theme-matery.matery-home-phase-playing #header {
+            animation: matery-home-entrance-pullback 2s cubic-bezier(0.62, 0.21, 0.25, 1) both;
+            will-change: transform, filter;
+        }
+
+        #theme-matery.matery-home-phase-playing #sticky-nav,
+        #theme-matery.matery-home-phase-playing #wrapper,
+        #theme-matery.matery-home-phase-playing .matery-home-float-buttons,
+        #theme-matery.matery-home-phase-playing footer {
+            animation: matery-home-entrance-blur 2s cubic-bezier(0.62, 0.21, 0.25, 1) both;
+            will-change: filter;
+        }
+
+        .matery-home-entrance-veil {
+            position: fixed;
+            inset: 0;
+            z-index: 2147483646;
+            pointer-events: none;
+            background: rgba(2, 6, 23, 0.28);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .matery-home-entrance-veil-playing {
+            animation: matery-home-entrance-veil-fade 2s cubic-bezier(0.62, 0.21, 0.25, 1) both;
+            will-change: opacity;
+        }
+
+        @keyframes matery-home-entrance-pullback {
             from {
-                transform: scale(1.12);
-                filter: blur(18px);
+                transform: scale(1.14) translateZ(0);
+                filter: blur(16px);
             }
             to {
-                transform: scale(1);
+                transform: scale(1) translateZ(0);
                 filter: blur(0);
             }
         }
 
+        @keyframes matery-home-entrance-blur {
+            from {
+                filter: blur(16px);
+            }
+            to {
+                filter: blur(0);
+            }
+        }
+
+        @keyframes matery-home-entrance-veil-fade {
+            from {
+                opacity: 1;
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+            }
+            to {
+                opacity: 0;
+                backdrop-filter: blur(0);
+                -webkit-backdrop-filter: blur(0);
+            }
+        }
+
         @media (prefers-reduced-motion: reduce) {
-            .matery-home-entrance {
+            .matery-home-scene {
                 animation: none;
                 transform: none;
                 filter: none;
+                opacity: 1;
+            }
+
+            .matery-home-entrance-surface {
+                animation: none;
+                transform: none;
+                filter: none;
+            }
+
+            #theme-matery #sticky-nav,
+            #theme-matery #header,
+            #theme-matery #wrapper,
+            #theme-matery .matery-home-float-buttons,
+            #theme-matery footer {
+                animation: none;
+                transform: none;
+                filter: none;
+            }
+
+            .matery-home-entrance-veil {
+                display: none;
             }
         }
 

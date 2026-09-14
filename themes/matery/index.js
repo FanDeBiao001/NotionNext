@@ -67,25 +67,28 @@ const LayoutBase = props => {
   const router = useRouter()
   const shouldAnimate =
     router.pathname === '/' && siteConfig('HOME_ENTRANCE_ANIMATION', true)
-  const [showEntrance, setShowEntrance] = useState(false)
+  const [entrancePhase, setEntrancePhase] = useState(
+    shouldAnimate ? 'waiting' : 'done'
+  )
+  const entranceStarted = useRef(false)
   // 加载wow动画
   useEffect(() => {
     loadWowJS()
   }, [])
   useEffect(() => {
-    if (!showEntrance) return
+    if (entrancePhase !== 'playing') return
 
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setShowEntrance(false)
+      setEntrancePhase('done')
       return
     }
 
     const timer = window.setTimeout(() => {
-      setShowEntrance(false)
-    }, 1250)
+      setEntrancePhase('done')
+    }, 2050)
 
     return () => window.clearTimeout(timer)
-  }, [showEntrance])
+  }, [entrancePhase])
   const containerSlot =
     router.route === '/' ? (
       <Announcement {...props} />
@@ -109,53 +112,72 @@ const LayoutBase = props => {
     <ThemeGlobalMatery.Provider value={{ searchModal }}>
       <div
         id='theme-matery'
-        className={`${siteConfig('FONT_STYLE')} min-h-screen flex flex-col justify-between w-full scroll-smooth`}>
+        className={`${siteConfig('FONT_STYLE')} matery-home-phase-${entrancePhase} min-h-screen w-full scroll-smooth`}>
         <Style />
 
         {/* 全屏固定星空背景 */}
-        <div
-          className={`fixed inset-0 z-0 ${showEntrance ? 'matery-home-entrance' : ''}`}>
-          <ParticleNetwork
-            onReady={() => {
-              if (shouldAnimate) setShowEntrance(true)
-            }}
-          />
+        <div className='fixed inset-0 z-0 overflow-hidden bg-slate-950'>
+          <div
+            className={`matery-home-scene matery-home-entrance-surface absolute inset-0 matery-home-entrance-${entrancePhase}`}>
+            <ParticleNetwork
+              meteorsEnabled={entrancePhase === 'done'}
+              onReady={() => {
+                if (!shouldAnimate || entranceStarted.current) return
+                entranceStarted.current = true
+                if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                  setEntrancePhase('done')
+                  return
+                }
+                requestAnimationFrame(() => setEntrancePhase('playing'))
+              }}
+            />
+          </div>
         </div>
 
-        {/* 顶部导航栏 */}
-        <Header {...props} />
+        <div
+          className='min-h-screen flex flex-col justify-between w-full'>
+          {/* 顶部导航栏 */}
+          <Header {...props} />
 
-        {/* 顶部嵌入 */}
-        {headerSlot}
+          {/* 顶部嵌入 */}
+          {headerSlot}
 
-        <main
-          id='wrapper'
-          className={`${siteConfig('MATERY_HOME_BANNER_ENABLE', null, CONFIG) ? '' : 'pt-16'} flex-1 w-full pt-0 pb-8 md:px-8 lg:px-24 relative`}>
-          {/* 嵌入区域 */}
+          <main
+            id='wrapper'
+            className={`${siteConfig('MATERY_HOME_BANNER_ENABLE', null, CONFIG) ? '' : 'pt-16'} flex-1 w-full pt-0 pb-8 md:px-8 lg:px-24 relative`}>
+            {/* 嵌入区域 */}
+            <div
+              id='container-slot'
+              className={`w-full ${fullWidth ? '' : 'max-w-6xl'} ${post && ' lg:max-w-3xl 2xl:max-w-4xl '} px-3 mx-auto lg:flex lg:space-x-4 justify-center relative z-10`}>
+              {containerSlot}
+            </div>
+
+            <div
+              id='container-inner'
+              className={`w-full min-h-fit ${fullWidth ? '' : 'max-w-6xl'} mx-auto lg:flex lg:space-x-4 justify-center relative z-10`}>
+              {children}
+            </div>
+          </main>
+
+          {/* 右下角悬浮 */}
+          <RightFloatButtons {...props} floatRightBottom={floatRightBottom} />
+
+          {/* 全文搜索 */}
+          <AlgoliaSearchModal cRef={searchModal} {...props} />
+
+          {/* 页脚 */}
+          <Footer title={siteConfig('TITLE')} />
+        </div>
+
+        {/* 入场完成后再加载桌宠资源与运行逻辑 */}
+        {entrancePhase === 'done' && <ShimejiPet />}
+
+        {entrancePhase !== 'done' && (
           <div
-            id='container-slot'
-            className={`w-full ${fullWidth ? '' : 'max-w-6xl'} ${post && ' lg:max-w-3xl 2xl:max-w-4xl '} px-3 mx-auto lg:flex lg:space-x-4 justify-center relative z-10`}>
-            {containerSlot}
-          </div>
-
-          <div
-            id='container-inner'
-            className={`w-full min-h-fit ${fullWidth ? '' : 'max-w-6xl'} mx-auto lg:flex lg:space-x-4 justify-center relative z-10`}>
-            {children}
-          </div>
-        </main>
-
-        {/* 桌宠（Shimeji 风格） */}
-        <ShimejiPet />
-
-        {/* 右下角悬浮 */}
-        <RightFloatButtons {...props} floatRightBottom={floatRightBottom} />
-
-        {/* 全文搜索 */}
-        <AlgoliaSearchModal cRef={searchModal} {...props} />
-
-        {/* 页脚 */}
-        <Footer title={siteConfig('TITLE')} />
+            aria-hidden='true'
+            className={`matery-home-entrance-veil matery-home-entrance-veil-${entrancePhase}`}
+          />
+        )}
       </div>
     </ThemeGlobalMatery.Provider>
   )
