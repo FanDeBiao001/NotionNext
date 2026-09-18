@@ -6,6 +6,16 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
 
+const appendAssetVersion = (assetUrl, version) => {
+  if (!assetUrl || !version || String(assetUrl).startsWith('data:')) {
+    return assetUrl
+  }
+
+  const [url, hash] = String(assetUrl).split('#', 2)
+  const separator = url.includes('?') ? '&' : '?'
+  return `${url}${separator}v=${encodeURIComponent(version)}${hash ? `#${hash}` : ''}`
+}
+
 /**
  * 页面的Head头，有用于SEO
  * @param {*} param0
@@ -72,7 +82,6 @@ const SEO = props => {
   const category = Array.isArray(meta?.category)
     ? meta?.category?.[0]
     : meta?.category || KEYWORDS // section 主要是像是 category 這樣的分類，Facebook 用這個來抓連結的分類
-  const favicon = siteConfig('BLOG_FAVICON')
   const BACKGROUND_DARK = siteConfig('BACKGROUND_DARK', '', NOTION_CONFIG)
 
   const SEO_BAIDU_SITE_VERIFICATION = siteConfig(
@@ -88,6 +97,15 @@ const SEO = props => {
   )
 
   const BLOG_FAVICON = siteConfig('BLOG_FAVICON', null, NOTION_CONFIG)
+  const BLOG_FAVICON_VERSION = siteConfig(
+    'BLOG_FAVICON_VERSION',
+    '20260918',
+    NOTION_CONFIG
+  )
+  const faviconHref = appendAssetVersion(
+    BLOG_FAVICON,
+    BLOG_FAVICON_VERSION
+  )
 
   const COMMENT_WEBMENTION_ENABLE = siteConfig(
     'COMMENT_WEBMENTION_ENABLE',
@@ -118,7 +136,7 @@ const SEO = props => {
   const AUTHOR = siteConfig('AUTHOR')
   return (
     <Head>
-      <link rel='icon' href={favicon} />
+      <link rel='icon' href={faviconHref} />
       <title>{title}</title>
       <meta name='theme-color' content={BACKGROUND_DARK} />
       <meta
@@ -180,8 +198,6 @@ const SEO = props => {
       <meta name='twitter:description' content={description} />
       <meta name='twitter:image' content={image} />
       <meta name='twitter:image:alt' content={title} />
-
-      <link rel='icon' href={BLOG_FAVICON} />
 
       {COMMENT_WEBMENTION_ENABLE && (
         <>
