@@ -57,7 +57,7 @@ const SideBarDrawer = ({
       className={`block ${showOnPC ? '' : 'lg:hidden'} top-0`}>
       <div
         id='sidebar-drawer'
-        className={`z-[70] ${className} ${isOpen ? 'translate-x-0 opacity-100' : 'pointer-events-none translate-x-[-104%] opacity-0'} transform-gpu transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] bg-white dark:bg-gray-900 flex flex-col fixed h-full left-0 overflow-y-scroll top-0 will-change-transform`}>
+        className={`z-[70] ${className || ''} ${isOpen ? 'translate-x-0 opacity-100' : 'pointer-events-none translate-x-[-104%] opacity-0'} w-[86vw] max-w-sm transform-gpu transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] bg-slate-950/75 backdrop-blur-2xl border-r border-white/10 shadow-2xl shadow-black/50 flex flex-col fixed h-full left-0 overflow-y-auto top-0 will-change-transform`}>
         {children}
       </div>
 
@@ -69,7 +69,7 @@ const SideBarDrawer = ({
           if (!backdropInteractive) return
           switchSideDrawerVisible(false)
         }}
-        className={`fixed top-0 left-0 z-[60] h-full w-full bg-black/70 transition-opacity duration-200 ease-out ${
+        className={`fixed top-0 left-0 z-[60] h-full w-full bg-black/55 backdrop-blur-sm transition-opacity duration-200 ease-out ${
           isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
         } ${isOpen && !backdropInteractive ? 'pointer-events-none' : ''}`}
       />

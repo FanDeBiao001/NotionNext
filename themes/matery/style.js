@@ -133,6 +133,149 @@ const Style = () => {
             }
         }
 
+        /* 移动搜索与评论区统一采用深色玻璃质感 */
+        #theme-matery input[type='search']::-webkit-search-cancel-button {
+            display: none;
+        }
+
+        #theme-matery .matery-comment-shell {
+            border: 1px solid rgba(255, 255, 255, 0.11);
+            border-radius: 1.5rem;
+            background: linear-gradient(
+                145deg,
+                rgba(15, 23, 42, 0.54),
+                rgba(2, 6, 23, 0.32)
+            );
+            -webkit-backdrop-filter: blur(20px) saturate(130%);
+            backdrop-filter: blur(20px) saturate(130%);
+            box-shadow:
+                0 24px 64px rgba(0, 0, 0, 0.24),
+                inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+
+        #theme-matery .matery-comment-shell .comment {
+            margin-top: 0;
+        }
+
+        #theme-matery [data-waline] {
+            --waline-white: #f8fafc;
+            --waline-color: rgba(226, 232, 240, 0.92);
+            --waline-light-grey: rgba(148, 163, 184, 0.8);
+            --waline-dark-grey: rgba(203, 213, 225, 0.9);
+            --waline-theme-color: #818cf8;
+            --waline-active-color: #a5b4fc;
+            --waline-bg-color: rgba(2, 6, 23, 0.28);
+            --waline-bg-color-light: rgba(255, 255, 255, 0.07);
+            --waline-bg-color-hover: rgba(255, 255, 255, 0.11);
+            --waline-border-color: rgba(255, 255, 255, 0.12);
+            --waline-info-bg-color: rgba(255, 255, 255, 0.07);
+            --waline-info-color: rgba(148, 163, 184, 0.9);
+            --waline-box-shadow: 0 18px 48px rgba(0, 0, 0, 0.2);
+        }
+
+        #theme-matery [data-waline] .wl-panel {
+            overflow: hidden;
+            margin: 0;
+            border: 1px solid rgba(255, 255, 255, 0.13);
+            border-radius: 1.25rem;
+            background: rgba(2, 6, 23, 0.34);
+            -webkit-backdrop-filter: blur(18px) saturate(125%);
+            backdrop-filter: blur(18px) saturate(125%);
+            box-shadow:
+                0 18px 44px rgba(0, 0, 0, 0.22),
+                inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+
+        #theme-matery [data-waline] .wl-header {
+            gap: 0.5rem;
+            padding: 0.65rem;
+            border-bottom: 0;
+        }
+
+        #theme-matery [data-waline] .wl-header-item {
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.58);
+            transition: border-color 180ms ease, background 180ms ease;
+        }
+
+        #theme-matery [data-waline] .wl-header-item:focus-within {
+            border-color: rgba(129, 140, 248, 0.72);
+            background: rgba(30, 41, 59, 0.72);
+        }
+
+        #theme-matery [data-waline] .wl-header label {
+            color: rgba(203, 213, 225, 0.82);
+        }
+
+        #theme-matery [data-waline] .wl-header input {
+            color: rgba(248, 250, 252, 0.95);
+        }
+
+        #theme-matery [data-waline] .wl-editor {
+            box-sizing: border-box;
+            width: calc(100% - 2rem);
+            margin: 0.35rem 1rem 0.75rem;
+            padding: 0.9rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.11);
+            border-radius: 1rem;
+            background: rgba(15, 23, 42, 0.48);
+            color: rgba(248, 250, 252, 0.95);
+        }
+
+        #theme-matery [data-waline] .wl-editor:focus,
+        #theme-matery [data-waline] .wl-input:focus {
+            border-color: rgba(129, 140, 248, 0.72);
+            background: rgba(30, 41, 59, 0.62);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+        }
+
+        #theme-matery [data-waline] .wl-btn {
+            border-color: rgba(255, 255, 255, 0.14);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        #theme-matery [data-waline] .wl-btn.primary {
+            border-color: rgba(129, 140, 248, 0.75);
+            background: linear-gradient(135deg, #6366f1, #818cf8);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.24);
+        }
+
+        #theme-matery [data-waline] .wl-card-item {
+            margin-bottom: 0.75rem;
+            padding: 0.85rem;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1rem;
+            background: rgba(2, 6, 23, 0.22);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+        }
+
+        #theme-matery [data-waline] .wl-card {
+            border-bottom: 0;
+        }
+
+        @media (max-width: 580px) {
+            #theme-matery .matery-comment-shell {
+                margin-left: 0;
+                margin-right: 0;
+                padding: 1rem 0.8rem;
+                border-radius: 1.25rem;
+            }
+
+            #theme-matery [data-waline] .wl-header-item {
+                width: 100%;
+                margin-bottom: 0.5rem;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            }
+
+            #theme-matery [data-waline] .wl-header-item:last-child {
+                margin-bottom: 0;
+            }
+        }
+
         /* 设置了从上到下的渐变黑色 */
         #theme-matery .header-cover::before {
             content: '';

@@ -179,7 +179,9 @@ const Header = props => {
               {' '}
               <MenuListTop {...props} />
             </div>
-            {showSearchButton && <SearchButton />}
+            {showSearchButton && (
+              <SearchButton onSearch={() => searchDrawer.current?.show()} />
+            )}
           </div>
         </div>
       </div>

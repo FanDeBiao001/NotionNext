@@ -7,7 +7,7 @@ import { useMateryGlobal } from '..'
  * 搜索按钮
  * @returns
  */
-export default function SearchButton(props) {
+export default function SearchButton({ onSearch }) {
   const { locale } = useGlobal()
   const router = useRouter()
   const { searchModal } = useMateryGlobal()
@@ -15,6 +15,8 @@ export default function SearchButton(props) {
   function handleSearch() {
     if (siteConfig('ALGOLIA_APP_ID')) {
       searchModal.current.openSearch()
+    } else if (onSearch) {
+      onSearch()
     } else {
       router.push('/search')
     }

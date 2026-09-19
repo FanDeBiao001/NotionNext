@@ -347,9 +347,11 @@ const LayoutSlug = props => {
                 <hr className='border-dashed' />
 
                 {/* 评论互动 */}
-                <div className='overflow-x-auto dark:bg-hexo-black-gray px-3'>
+                <div className='px-3'>
                   <WWAds orientation='horizontal' />
-                  <Comment frontMatter={post} />
+                  <div className='matery-comment-shell mx-2 md:mx-4 my-8 px-4 md:px-7 py-6'>
+                    <Comment frontMatter={post} />
+                  </div>
                 </div>
               </div>
             </div>

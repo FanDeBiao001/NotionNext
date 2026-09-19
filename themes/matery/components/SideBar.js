@@ -13,16 +13,23 @@ const SideBar = (props) => {
   const { siteInfo } = props
 
   return (
-      <div id='side-bar'>
-          <div className="mh-48 w-full bg-indigo-700">
-              <div className='mx-5 pt-6 pb-2'>
-                  <LazyImage src={siteInfo?.icon} className='cursor-pointer rounded-full' width={80} height={80} alt={siteConfig('AUTHOR')} />
-                  <div className='text-white text-xl my-1'>{siteConfig('TITLE')}</div>
-                  <div className='text-xs my-1 text-gray-300'>{siteConfig('DESCRIPTION')}</div>
-              </div>
+    <div id='side-bar' className='min-h-full text-white'>
+      <div className='w-full border-b border-white/10 bg-black/20 backdrop-blur-xl'>
+        <div className='mx-5 pt-8 pb-5'>
+          <LazyImage
+            src={siteInfo?.icon}
+            className='cursor-pointer rounded-full ring-1 ring-white/20 shadow-lg'
+            width={80}
+            height={80}
+            alt={siteConfig('AUTHOR')}
+          />
+          <div className='text-white text-xl mt-3 font-medium tracking-wide'>
+            {siteConfig('TITLE')}
           </div>
-          <MenuListSide {...props} />
+        </div>
       </div>
+      <MenuListSide {...props} />
+    </div>
   )
 }
 

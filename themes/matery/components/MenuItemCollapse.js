@@ -30,14 +30,14 @@ export const MenuItemCollapse = ({ link }) => {
   const selected = router.pathname === link.href || router.asPath === link.href
 
   return (
-    <>
+    <div className='overflow-hidden rounded-xl border border-white/10 bg-black/25 backdrop-blur-md shadow-sm'>
       <div
         onClick={toggleShow}
         className={
-          'py-2 px-5 duration-300 text-base justify-between hover:bg-indigo-700 hover:text-white hover:shadow-lg cursor-pointer font-light flex flex-nowrap items-center ' +
+          'py-3 px-4 duration-300 text-base justify-between hover:bg-white/10 hover:text-white cursor-pointer font-light flex flex-nowrap items-center ' +
           (selected
-            ? 'bg-indigo-500 text-white '
-            : ' text-black dark:text-white ')
+            ? 'bg-white/15 text-white '
+            : 'text-gray-100')
         }>
         {!hasSubMenu && (
           <SmartLink href={link?.href} target={link?.target}>
@@ -72,7 +72,7 @@ export const MenuItemCollapse = ({ link }) => {
             return (
               <div
                 key={index}
-                className='cursor-pointer whitespace-nowrap dark:text-gray-200  w-full font-extralight dark:bg-black text-left px-5 justify-start bg-gray-100  hover:bg-indigo-500 dark:hover:bg-indigo-500 hover:text-white tracking-widest transition-all duration-200 border-b dark:border-gray-800 py-3 pr-6'>
+                className='cursor-pointer whitespace-nowrap w-full font-extralight text-gray-200 text-left px-5 justify-start bg-black/25 backdrop-blur-md hover:bg-white/10 hover:text-white tracking-widest transition-all duration-200 border-t border-white/10 py-3 pr-6'>
                 <SmartLink href={sLink.href} target={link?.target}>
                   <span className='text-sm'>
                     <i className={`${sLink.icon} w-4 mr-3 text-center`} />
@@ -84,6 +84,6 @@ export const MenuItemCollapse = ({ link }) => {
           })}
         </Collapse>
       )}
-    </>
+    </div>
   )
 }
