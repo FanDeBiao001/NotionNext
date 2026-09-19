@@ -14,7 +14,7 @@ const SideBar = (props) => {
 
   return (
     <div id='side-bar' className='min-h-full text-white'>
-      <div className='w-full border-b border-white/10 bg-black/20 backdrop-blur-xl'>
+      <div className='w-full border-b border-white/10 bg-black/20'>
         <div className='mx-5 pt-8 pb-5'>
           <LazyImage
             src={siteInfo?.icon}

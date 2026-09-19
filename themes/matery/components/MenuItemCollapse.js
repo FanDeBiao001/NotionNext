@@ -30,7 +30,7 @@ export const MenuItemCollapse = ({ link }) => {
   const selected = router.pathname === link.href || router.asPath === link.href
 
   return (
-    <div className='overflow-hidden rounded-xl border border-white/10 bg-black/25 backdrop-blur-md shadow-sm'>
+    <div className='overflow-hidden rounded-xl border border-white/10 bg-black/25 shadow-sm'>
       <div
         onClick={toggleShow}
         className={
@@ -72,7 +72,7 @@ export const MenuItemCollapse = ({ link }) => {
             return (
               <div
                 key={index}
-                className='cursor-pointer whitespace-nowrap w-full font-extralight text-gray-200 text-left px-5 justify-start bg-black/25 backdrop-blur-md hover:bg-white/10 hover:text-white tracking-widest transition-all duration-200 border-t border-white/10 py-3 pr-6'>
+                className='cursor-pointer whitespace-nowrap w-full font-extralight text-gray-200 text-left px-5 justify-start bg-black/25 hover:bg-white/10 hover:text-white tracking-widest transition-all duration-200 border-t border-white/10 py-3 pr-6'>
                 <SmartLink href={sLink.href} target={link?.target}>
                   <span className='text-sm'>
                     <i className={`${sLink.icon} w-4 mr-3 text-center`} />

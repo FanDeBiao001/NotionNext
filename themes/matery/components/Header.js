@@ -94,7 +94,12 @@ const Header = props => {
   const [isOpen, changeShow] = useState(false)
 
   const toggleMenuOpen = () => {
-    changeShow(!isOpen)
+    changeShow(true)
+  }
+
+  const openMenuFromTouch = event => {
+    event.preventDefault()
+    changeShow(true)
   }
 
   const toggleMenuClose = () => {
@@ -158,15 +163,19 @@ const Header = props => {
         <div className='w-full flex justify-between items-center px-4 py-2'>
           {/* 左侧功能 */}
           <div className='justify-start items-center block lg:hidden '>
-            <div
+            <button
+              type='button'
               onClick={toggleMenuOpen}
+              onTouchEnd={openMenuFromTouch}
+              aria-controls='sidebar-drawer'
+              aria-expanded={isOpen}
               className='w-8 justify-center items-center h-8 cursor-pointer flex lg:hidden'>
               {isOpen ? (
                 <i className='fas fa-times' />
               ) : (
                 <i className='fas fa-bars' />
               )}
-            </div>
+            </button>
           </div>
 
           <div className='flex'>

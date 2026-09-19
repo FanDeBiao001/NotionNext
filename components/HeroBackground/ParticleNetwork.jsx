@@ -387,15 +387,24 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true }) {
     let baseRotY = 0, baseRotX = 0
     let animationId
     let hasRenderedFirstFrame = false
+    let lastFrameTime = performance.now()
 
-    function animate() {
+    function animate(now = performance.now()) {
       animationId = requestAnimationFrame(animate)
 
-      baseRotY += 0.0008
-      baseRotX += 0.0002
+      // Keep motion tied to elapsed time instead of the number of rendered
+      // frames. Expensive overlays can lower mobile FPS; frame-based movement
+      // otherwise appears to slow down and then suddenly speed up afterwards.
+      const deltaSeconds = Math.min(Math.max((now - lastFrameTime) / 1000, 0), 0.05)
+      const frameScale = deltaSeconds * 60
+      lastFrameTime = now
 
-      mouseX += (targetX - mouseX) * 0.05
-      mouseY += (targetY - mouseY) * 0.05
+      baseRotY += 0.0008 * frameScale
+      baseRotX += 0.0002 * frameScale
+
+      const pointerEase = 1 - Math.pow(0.95, frameScale)
+      mouseX += (targetX - mouseX) * pointerEase
+      mouseY += (targetY - mouseY) * pointerEase
 
       particles.rotation.y = baseRotY + mouseX * 0.3
       particles.rotation.x = baseRotX + mouseY * 0.2
@@ -405,31 +414,38 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true }) {
         if (meteorsEnabledRef.current) {
           for (const slot of starSlots) {
             if (!slot.active) {
-              slot.spawnTimer -= 0.016
+              slot.spawnTimer -= deltaSeconds
               if (slot.spawnTimer <= 0) spawnStar(slot)
               continue
             }
 
-            slot.life -= 0.0018
+            // Add intermediate samples when FPS drops so the trail keeps the
+            // same visual length and does not develop large gaps.
+            const subSteps = Math.min(3, Math.max(1, Math.ceil(frameScale)))
+            const stepScale = frameScale / subSteps
+            for (let step = 0; step < subSteps; step++) {
+              slot.life -= 0.0018 * stepScale
 
-            slot.x += slot.dirX
-            slot.y += slot.dirY
+              slot.x += slot.dirX * stepScale
+              slot.y += slot.dirY * stepScale
 
-            // Turbulence
-            slot.dirX += (Math.random() - 0.5) * 0.0006
-            slot.dirY += (Math.random() - 0.5) * 0.0006
-            const len = Math.hypot(slot.dirX, slot.dirY) || 1
-            slot.dirX = (slot.dirX / len) * slot.speed
-            slot.dirY = (slot.dirY / len) * slot.speed
-            const hx = slot.x
-            const hy = slot.y
-            slot.ringData[slot.ringIdx * 2] = hx
-            slot.ringData[slot.ringIdx * 2 + 1] = hy
-            slot.ringIdx = (slot.ringIdx + 1) % RING_SIZE
-            if (slot.ringLen < RING_SIZE) slot.ringLen++
+              // Turbulence
+              const turbulenceScale = Math.sqrt(stepScale)
+              slot.dirX += (Math.random() - 0.5) * 0.0006 * turbulenceScale
+              slot.dirY += (Math.random() - 0.5) * 0.0006 * turbulenceScale
+              const len = Math.hypot(slot.dirX, slot.dirY) || 1
+              slot.dirX = (slot.dirX / len) * slot.speed
+              slot.dirY = (slot.dirY / len) * slot.speed
+              slot.ringData[slot.ringIdx * 2] = slot.x
+              slot.ringData[slot.ringIdx * 2 + 1] = slot.y
+              slot.ringIdx = (slot.ringIdx + 1) % RING_SIZE
+              if (slot.ringLen < RING_SIZE) slot.ringLen++
+            }
 
             buildRibbon(slot)
 
+            const hx = slot.x
+            const hy = slot.y
             if (slot.life <= 0 || Math.abs(hx) > 8.5 || Math.abs(hy) > 5.5) {
               despawnStar(slot)
             }

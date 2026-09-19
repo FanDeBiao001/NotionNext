@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
 /**
  * 侧边栏抽屉面板，可以从侧面拉出
@@ -15,21 +15,44 @@ const SideBarDrawer = ({
   showOnPC = false
 }) => {
   const router = useRouter()
-
-  /**
-   * 移动端：打开抽屉后同一手势会触发「幽灵点击」落在全屏遮罩上导致立刻关闭。
-   * 打开后短时间内遮罩 pointer-events: none，超时后再响应关闭。
-   */
-  const [backdropInteractive, setBackdropInteractive] = useState(false)
+  const drawerRef = useRef(null)
+  const backdropPointerDownRef = useRef(false)
 
   useEffect(() => {
-    if (!isOpen) {
-      setBackdropInteractive(false)
-      return
+    if (!isOpen) return
+
+    const body = document.body
+    const html = document.documentElement
+    const previousBodyOverflow = body.style.overflow
+    const previousBodyOverscroll = body.style.overscrollBehavior
+    const previousHtmlOverflow = html.style.overflow
+    const previousHtmlOverscroll = html.style.overscrollBehavior
+
+    const preventBackgroundScroll = event => {
+      if (drawerRef.current?.contains(event.target)) return
+      event.preventDefault()
     }
-    setBackdropInteractive(false)
-    const id = window.setTimeout(() => setBackdropInteractive(true), 180)
-    return () => window.clearTimeout(id)
+
+    document.addEventListener('touchmove', preventBackgroundScroll, {
+      passive: false
+    })
+    document.addEventListener('wheel', preventBackgroundScroll, {
+      passive: false
+    })
+
+    body.style.overflow = 'hidden'
+    body.style.overscrollBehavior = 'none'
+    html.style.overflow = 'hidden'
+    html.style.overscrollBehavior = 'none'
+
+    return () => {
+      document.removeEventListener('touchmove', preventBackgroundScroll)
+      document.removeEventListener('wheel', preventBackgroundScroll)
+      body.style.overflow = previousBodyOverflow
+      body.style.overscrollBehavior = previousBodyOverscroll
+      html.style.overflow = previousHtmlOverflow
+      html.style.overscrollBehavior = previousHtmlOverscroll
+    }
   }, [isOpen])
 
   useEffect(() => {
@@ -57,7 +80,19 @@ const SideBarDrawer = ({
       className={`block ${showOnPC ? '' : 'lg:hidden'} top-0`}>
       <div
         id='sidebar-drawer'
-        className={`z-[70] ${className || ''} ${isOpen ? 'translate-x-0 opacity-100' : 'pointer-events-none translate-x-[-104%] opacity-0'} w-[86vw] max-w-sm transform-gpu transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] bg-slate-950/75 backdrop-blur-2xl border-r border-white/10 shadow-2xl shadow-black/50 flex flex-col fixed h-full left-0 overflow-y-auto top-0 will-change-transform`}>
+        ref={drawerRef}
+        aria-hidden={!isOpen}
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          WebkitTransform: isOpen
+            ? 'translate3d(0, 0, 0)'
+            : 'translate3d(-100%, 0, 0)',
+          transform: isOpen
+            ? 'translate3d(0, 0, 0)'
+            : 'translate3d(-100%, 0, 0)',
+          pointerEvents: isOpen ? 'auto' : 'none'
+        }}
+        className={`z-[70] ${className || ''} w-72 max-w-[80vw] transform-gpu transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] bg-slate-950/85 backdrop-blur-xl border-r border-white/10 shadow-2xl shadow-black/50 flex flex-col fixed h-full left-0 overflow-y-auto overscroll-contain touch-pan-y top-0 will-change-transform`}>
         {children}
       </div>
 
@@ -65,13 +100,23 @@ const SideBarDrawer = ({
       <div
         id='sidebar-drawer-background'
         role='presentation'
-        onClick={() => {
-          if (!backdropInteractive) return
-          switchSideDrawerVisible(false)
+        onPointerDown={event => {
+          backdropPointerDownRef.current = event.target === event.currentTarget
         }}
-        className={`fixed top-0 left-0 z-[60] h-full w-full bg-black/55 backdrop-blur-sm transition-opacity duration-200 ease-out ${
-          isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
-        } ${isOpen && !backdropInteractive ? 'pointer-events-none' : ''}`}
+        onPointerUp={event => {
+          const shouldClose =
+            backdropPointerDownRef.current && event.target === event.currentTarget
+          backdropPointerDownRef.current = false
+          if (shouldClose) switchSideDrawerVisible(false)
+        }}
+        onPointerCancel={() => {
+          backdropPointerDownRef.current = false
+        }}
+        style={{
+          opacity: isOpen ? 1 : 0,
+          pointerEvents: isOpen ? 'auto' : 'none'
+        }}
+        className='fixed top-0 left-0 z-[60] h-full w-full bg-black/65 overscroll-none touch-none transition-opacity duration-300 ease-out'
       />
     </div>
   )
