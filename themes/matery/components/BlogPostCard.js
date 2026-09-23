@@ -25,23 +25,23 @@ const BlogPostCard = ({ index, post, showSummary, siteInfo }) => {
   const delay = (index % 3) * 300
 
   return (
-    <div
+    <article
       data-aos='zoom-in'
       data-aos-duration='500'
       data-aos-delay={delay}
       data-aos-once='true'
       data-aos-anchor-placement='top-bottom'
-      className='w-full mb-4 overflow-hidden shadow-md border dark:border-black rounded-xl bg-white dark:bg-hexo-black-gray'>
+      className='w-full mb-4 overflow-hidden rounded-2xl border border-white/15 bg-slate-900/90 text-slate-100 shadow-xl shadow-black/20 transition-colors hover:border-indigo-300/40'>
       {/* 固定高度 ，空白用图片拉升填充 */}
       <header className='group flex flex-col h-80 justify-between'>
         {/* 头部图片 填充卡片 */}
         {showPageCover && (
           <SmartLink href={post?.href} passHref legacyBehavior>
-            <div className='flex flex-grow w-full relative duration-200 = rounded-t-md cursor-pointer transform overflow-hidden'>
+            <div className='flex flex-grow w-full relative duration-200 cursor-pointer transform overflow-hidden'>
               <LazyImage
                 src={post?.pageCoverThumbnail}
                 alt={post.title}
-                className='h-full w-full group-hover:scale-125 group-hover:brightness-50 rounded-t-md transform object-cover duration-500'
+                className='h-full w-full group-hover:scale-110 group-hover:brightness-75 transform object-cover duration-500'
               />
               <h2 className='absolute bottom-0 left-0 text-white p-6 text-2xl replace break-words w-full shadow-text z-30'>
                 {siteConfig('POST_TITLE_ICON') && (
@@ -58,16 +58,16 @@ const BlogPostCard = ({ index, post, showSummary, siteInfo }) => {
         )}
 
         {/* 文字描述 */}
-        <main>
+        <div>
           {/* 描述 */}
-          <div className='px-4 flex flex-col w-full  text-gray-700  dark:text-gray-300'>
+          <div className='px-4 flex flex-col w-full text-slate-200'>
             {(!showPreview || showSummary) && post.summary && (
               <p className='replace my-2 text-sm font-light leading-7 line-clamp-3'>
                 {post.summary}
               </p>
             )}
 
-            <div className='text-gray-800 justify-between flex my-2  dark:text-gray-300'>
+            <div className='text-slate-300 justify-between flex my-2 gap-2'>
               <div>
                 <SmartLink
                   href={`/archive#${formatDateFmt(post?.publishDate, 'yyyy-MM')}`}
@@ -84,7 +84,7 @@ const BlogPostCard = ({ index, post, showSummary, siteInfo }) => {
               <SmartLink
                 href={`/category/${post.category}`}
                 passHref
-                className='cursor-pointer font-light text-sm hover:underline hover:text-indigo-700 dark:hover:text-indigo-400 transform'>
+                className='cursor-pointer font-light text-sm hover:underline hover:text-indigo-300 transform'>
                 <i className='mr-1 far fa-folder' />
                 {post.category}
               </SmartLink>
@@ -93,8 +93,8 @@ const BlogPostCard = ({ index, post, showSummary, siteInfo }) => {
 
           {post?.tagItems && post?.tagItems.length > 0 && (
             <>
-              <hr />
-              <div className='text-gray-400 justify-between flex px-5 py-3'>
+              <hr className='border-white/10' />
+              <div className='text-slate-400 justify-between flex px-5 py-3'>
                 <div className='md:flex-nowrap flex-wrap md:justify-start inline-block'>
                   <div>
                     {' '}
@@ -106,9 +106,9 @@ const BlogPostCard = ({ index, post, showSummary, siteInfo }) => {
               </div>
             </>
           )}
-        </main>
+        </div>
       </header>
-    </div>
+    </article>
   )
 }
 

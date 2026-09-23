@@ -30,13 +30,10 @@ const PaginationSimple = ({ page, totalPage }) => {
               query: router.query.s ? { s: router.query.s } : {},
               hash: 'posts-wrapper'
             }}
-            passHref
-            legacyBehavior>
-            <button
-              rel='prev'
-              className='block px-3.5 py-2 text-white bg-indigo-700 hover:border-black rounded-full duration-200'>
-              <i className='fas fa-angle-left text-2xl' />
-            </button>
+            rel='prev'
+            aria-label={`上一页，第 ${currentPage - 1} 页`}
+            className='flex h-11 min-w-11 items-center justify-center rounded-full bg-indigo-700 px-3.5 text-white transition-colors hover:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300'>
+            <i aria-hidden='true' className='fas fa-angle-left text-2xl' />
           </SmartLink>
         </div>
       )}
@@ -49,13 +46,10 @@ const PaginationSimple = ({ page, totalPage }) => {
               query: router.query.s ? { s: router.query.s } : {},
               hash: 'posts-wrapper'
             }}
-            passHref
-            legacyBehavior>
-            <button
-              rel='next'
-              className='block px-4 py-2 text-white bg-indigo-700 hover:border-black rounded-full duration-200'>
-              <i className='fas fa-angle-right text-2xl' />
-            </button>
+            rel='next'
+            aria-label={`下一页，第 ${currentPage + 1} 页`}
+            className='flex h-11 min-w-11 items-center justify-center rounded-full bg-indigo-700 px-4 text-white transition-colors hover:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300'>
+            <i aria-hidden='true' className='fas fa-angle-right text-2xl' />
           </SmartLink>
         </div>
       )}

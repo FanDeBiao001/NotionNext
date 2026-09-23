@@ -3,7 +3,8 @@
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 
-const PARTICLE_COUNT = 260
+const DESKTOP_PARTICLE_COUNT = 260
+const MOBILE_PARTICLE_COUNT = 150
 const CONNECT_DISTANCE = 1.4
 const SHOOTING_STAR_COUNT = 3
 const RING_SIZE = 40
@@ -11,7 +12,7 @@ const HEAD_CAP_SEGMENTS = 10
 const RIBBON_Z = 2.97
 const MAX_RIBBON_WIDTH = 0.18
 
-export default function ParticleNetwork({ onReady, meteorsEnabled = true }) {
+export default function ParticleNetwork({ onReady, meteorsEnabled = true, animated = true }) {
   const mountRef = useRef(null)
   const onReadyRef = useRef(onReady)
   const meteorsEnabledRef = useRef(meteorsEnabled)
@@ -21,6 +22,9 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true }) {
   useEffect(() => {
     const width = window.innerWidth
     const height = window.innerHeight
+    const isMobile = window.matchMedia('(max-width: 767px)').matches
+    const particleCount = isMobile ? MOBILE_PARTICLE_COUNT : DESKTOP_PARTICLE_COUNT
+    const shouldAnimate = animated && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     // Scene
     const scene = new THREE.Scene()
@@ -30,8 +34,9 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true }) {
     // Renderer
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true })
     renderer.setSize(width, height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    mountRef.current.appendChild(renderer.domElement)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.25 : 2))
+    const mountElement = mountRef.current
+    mountElement.appendChild(renderer.domElement)
 
     // Glow texture
     function createGlowTexture(innerColor, outerColor, size = 64) {
@@ -56,9 +61,9 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true }) {
     // Keep-out radius around screen center to avoid a visible "dot" artifact
     const CENTER_KEEP_OUT = 0.6
 
-    const positions = new Float32Array(PARTICLE_COUNT * 3)
-    const colors = new Float32Array(PARTICLE_COUNT * 3)
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
+    const positions = new Float32Array(particleCount * 3)
+    const colors = new Float32Array(particleCount * 3)
+    for (let i = 0; i < particleCount; i++) {
       let px, py
       do {
         px = (Math.random() - 0.5) * 15
@@ -95,11 +100,11 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true }) {
     // ==========================================
     const CENTER_KEEP_OUT_SQ = CENTER_KEEP_OUT * CENTER_KEEP_OUT
     const segmentIndices = []
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
+    for (let i = 0; i < particleCount; i++) {
       const ax = positions[i * 3]
       const ay = positions[i * 3 + 1]
       const az = positions[i * 3 + 2]
-      for (let j = i + 1; j < PARTICLE_COUNT; j++) {
+      for (let j = i + 1; j < particleCount; j++) {
         const dx = ax - positions[j * 3]
         const dy = ay - positions[j * 3 + 1]
         const dz = az - positions[j * 3 + 2]
@@ -385,12 +390,12 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true }) {
     // Animation
     // ==========================================
     let baseRotY = 0, baseRotX = 0
-    let animationId
+    let animationId = null
     let hasRenderedFirstFrame = false
     let lastFrameTime = performance.now()
 
     function animate(now = performance.now()) {
-      animationId = requestAnimationFrame(animate)
+      if (shouldAnimate) animationId = requestAnimationFrame(animate)
 
       // Keep motion tied to elapsed time instead of the number of rendered
       // frames. Expensive overlays can lower mobile FPS; frame-based movement
@@ -461,7 +466,23 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true }) {
         onReadyRef.current?.()
       }
     }
-    animate()
+    if (shouldAnimate && document.hidden) {
+      animationId = null
+    } else {
+      animate()
+    }
+
+    const onVisibilityChange = () => {
+      if (!shouldAnimate) return
+      if (document.hidden) {
+        if (animationId !== null) cancelAnimationFrame(animationId)
+        animationId = null
+      } else if (animationId === null) {
+        lastFrameTime = performance.now()
+        animationId = requestAnimationFrame(animate)
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
 
     // ==========================================
     // Resize — throttled
@@ -476,6 +497,7 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true }) {
         camera.aspect = w / h
         camera.updateProjectionMatrix()
         renderer.setSize(w, h)
+        if (!shouldAnimate) renderer.render(scene, camera)
       }, 150)
     }
     window.addEventListener('resize', onResize)
@@ -484,7 +506,8 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true }) {
     // Cleanup
     // ==========================================
     return () => {
-      cancelAnimationFrame(animationId)
+      if (animationId !== null) cancelAnimationFrame(animationId)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
       window.removeEventListener('mousemove', onMouseMove)
       window.removeEventListener('resize', onResize)
       clearTimeout(resizeTimeout)
@@ -499,11 +522,11 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true }) {
         slot.ribbonGeo.dispose()
         slot.ribbonMat.dispose()
       }
-      if (mountRef.current && mountRef.current.contains(renderer.domElement)) {
-        mountRef.current.removeChild(renderer.domElement)
+      if (mountElement.contains(renderer.domElement)) {
+        mountElement.removeChild(renderer.domElement)
       }
     }
-  }, [])
+  }, [animated])
 
   return <div ref={mountRef} className='particle-container' />
 }

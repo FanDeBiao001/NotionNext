@@ -679,6 +679,8 @@ const ThemeSwitch = () => {
       )}
 
       <SideBarDrawer
+        drawerId='theme-switch-drawer'
+        ariaLabel='切换主题'
         className='flex max-h-screen w-[min(100vw-0.5rem,28rem)] flex-col overflow-hidden border-r border-gray-200/90 bg-white p-0 shadow-2xl dark:border-gray-800 dark:bg-gray-950 md:w-[min(100vw-2rem,48rem)] lg:w-[min(100vw-3rem,56rem)]'
         isOpen={sideBarVisible}
         showOnPC={true}

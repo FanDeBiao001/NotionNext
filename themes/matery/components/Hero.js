@@ -1,4 +1,3 @@
-import Head from 'next/head'
 import HeroBackground from '@/components/HeroBackground'
 import { siteConfig } from '@/lib/config'
 import { useGlobal } from '@/lib/global'
@@ -60,15 +59,16 @@ const Hero = props => {
       <HeroBackground />
       <div className='text-white absolute flex flex-col h-full items-center justify-center w-full '>
         {/* 站点标题 */}
-        <div className='text-4xl md:text-5xl shadow-text'>
+        <h1 className='text-4xl md:text-5xl shadow-text'>
           {siteConfig('TITLE') || siteInfo?.title}
-        </div>
+        </h1>
         {/* 站点欢迎语 */}
         <div className='mt-2 h-12 items-center text-center shadow-text text-white text-lg'>
           <span id='typed' />
         </div>
         {/* 滚动按钮 */}
-        <div
+        <button
+          type='button'
           onClick={() => {
             window.scrollTo({ top: wrapperTop, behavior: 'smooth' })
           }}
@@ -80,19 +80,8 @@ const Hero = props => {
               locale.COMMON.START_READING}
           </span>
           <i className='fas fa-angle-double-down' />
-        </div>
+        </button>
       </div>
-
-      <Head>
-        {siteInfo?.pageCover && (
-          <link rel='preload' href={siteInfo.pageCover} as='image' />
-        )}
-      </Head>
-      <img
-        id='header-cover'
-        src={siteInfo?.pageCover}
-        className={`header-cover object-center w-full h-screen object-cover hidden`}
-      />
     </header>
   )
 }

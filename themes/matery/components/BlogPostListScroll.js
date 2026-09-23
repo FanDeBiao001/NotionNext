@@ -1,7 +1,6 @@
 import { siteConfig } from '@/lib/config'
 import { useGlobal } from '@/lib/global'
 import { getListByPage } from '@/lib/utils'
-import throttle from 'lodash.throttle'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import CONFIG from '../config'
 import BlogPostCard from './BlogPostCard'
@@ -23,56 +22,37 @@ const BlogPostListScroll = ({
   const { NOTION_CONFIG } = useGlobal()
   const POSTS_PER_PAGE = siteConfig('POSTS_PER_PAGE', null, NOTION_CONFIG)
   const [page, updatePage] = useState(1)
-  const postsToShow = getListByPage(posts, page, POSTS_PER_PAGE)
-  // 监听滚动
-  useEffect(() => {
-    window.addEventListener('scroll', scrollTrigger, { passive: true })
-    return () => {
-      window.removeEventListener('scroll', scrollTrigger)
-    }
-  })
-
-  const targetRef = useRef(null)
+  const pageSize = Number(POSTS_PER_PAGE) || 10
+  const postsToShow = getListByPage(posts, page, pageSize)
+  const loadMoreRef = useRef(null)
   const { locale } = useGlobal()
-  let hasMore = false
-  if (posts) {
-    const totalCount = posts.length
-    hasMore = page * POSTS_PER_PAGE < totalCount
-  }
+  const totalPages = Math.ceil(posts.length / pageSize)
+  const hasMore = page < totalPages
 
-  const handleGetMore = () => {
-    if (!hasMore) return
-    updatePage(page + 1)
-  }
+  const handleGetMore = useCallback(() => {
+    updatePage(currentPage => Math.min(currentPage + 1, totalPages))
+  }, [totalPages])
 
-  const throttleMs = 200
-  const scrollTrigger = useCallback(
-    throttle(() => {
-      requestAnimationFrame(() => {
-        const scrollS = window.scrollY + window.outerHeight
-        const clientHeight = targetRef
-          ? targetRef.current
-            ? targetRef.current.clientHeight
-            : 0
-          : 0
-        if (scrollS > clientHeight + 100) {
-          handleGetMore()
-        }
-      })
-    }, throttleMs)
-  )
+  useEffect(() => {
+    if (!hasMore || !loadMoreRef.current || !window.IntersectionObserver) return
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0]?.isIntersecting) handleGetMore()
+    }, { rootMargin: '0px 0px 200px 0px' })
+    observer.observe(loadMoreRef.current)
+    return () => observer.disconnect()
+  }, [hasMore, handleGetMore, page])
 
   if (!postsToShow || postsToShow.length === 0) {
     return <BlogPostListEmpty currentSearch={currentSearch} />
   } else {
     return (
-      <div id='container' ref={targetRef} className='w-full'>
+      <div id='container' className='w-full'>
         {/* 文章列表 */}
         <div className='pt-4 flex flex-wrap pb-12'>
-          {postsToShow.map(post => (
+          {postsToShow.map((post, index) => (
             <div key={post.id} className='xl:w-1/3 md:w-1/2 w-full p-4'>
               <BlogPostCard
-                index={posts.indexOf(post)}
+                index={index}
                 post={post}
                 siteInfo={siteInfo}
               />
@@ -80,16 +60,17 @@ const BlogPostListScroll = ({
           ))}
         </div>
 
-        <div>
-          <div
-            onClick={() => {
-              handleGetMore()
-            }}
-            className='w-full my-4 py-4 text-center cursor-pointer rounded-xl dark:text-gray-200'>
-            {' '}
-            {hasMore ? locale.COMMON.MORE : `${locale.COMMON.NO_MORE}`}{' '}
+        {hasMore && (
+          <div className='my-4 text-center'>
+            <button
+              ref={loadMoreRef}
+              type='button'
+              onClick={handleGetMore}
+              className='rounded-full border border-white/20 bg-slate-900/80 px-6 py-3 text-slate-100 transition-colors hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-300'>
+              {locale.COMMON.MORE}
+            </button>
           </div>
-        </div>
+        )}
       </div>
     )
   }

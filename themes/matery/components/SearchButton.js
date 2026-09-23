@@ -23,14 +23,13 @@ export default function SearchButton({ onSearch }) {
   }
 
   return (
-    <>
-      <div
-        onClick={handleSearch}
-        title={locale.NAV.SEARCH}
-        alt={locale.NAV.SEARCH}
-        className='cursor-pointer dark:text-white hover:bg-black hover:bg-opacity-10 rounded-full w-10 h-10 flex justify-center items-center duration-200 transition-all'>
-        <i title={locale.NAV.SEARCH} className='fa-solid fa-magnifying-glass' />
-      </div>
-    </>
+    <button
+      type='button'
+      onClick={handleSearch}
+      title={locale.NAV.SEARCH}
+      aria-label={locale.NAV.SEARCH}
+      className='cursor-pointer dark:text-white hover:bg-black hover:bg-opacity-10 rounded-full w-11 h-11 flex justify-center items-center duration-200 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-300'>
+      <i aria-hidden='true' className='fa-solid fa-magnifying-glass' />
+    </button>
   )
 }

@@ -12,11 +12,58 @@ const SideBarDrawer = ({
   onOpen,
   onClose,
   className,
+  drawerId = 'sidebar-drawer',
+  ariaLabel = '侧边栏菜单',
   showOnPC = false
 }) => {
   const router = useRouter()
   const drawerRef = useRef(null)
   const backdropPointerDownRef = useRef(false)
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const previouslyFocused = document.activeElement
+    const getFocusable = () => Array.from(
+      drawerRef.current?.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      ) || []
+    ).filter(element => element.getClientRects().length > 0)
+
+    const initialFocus = getFocusable()[0] || drawerRef.current
+    initialFocus?.focus()
+
+    const onKeyDown = event => {
+      if (event.key === 'Escape') {
+        onCloseRef.current?.()
+        return
+      }
+      if (event.key !== 'Tab') return
+      const elements = getFocusable()
+      if (elements.length === 0) {
+        event.preventDefault()
+        drawerRef.current?.focus()
+        return
+      }
+      const first = elements[0]
+      const last = elements[elements.length - 1]
+      if (event.shiftKey && (document.activeElement === first || !drawerRef.current?.contains(document.activeElement))) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && (document.activeElement === last || !drawerRef.current?.contains(document.activeElement))) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      if (previouslyFocused?.isConnected) previouslyFocused.focus()
+    }
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) return
@@ -57,13 +104,13 @@ const SideBarDrawer = ({
 
   useEffect(() => {
     const sideBarDrawerRouteListener = () => {
-      onClose && onClose()
+      onCloseRef.current?.()
     }
     router.events.on('routeChangeComplete', sideBarDrawerRouteListener)
     return () => {
       router.events.off('routeChangeComplete', sideBarDrawerRouteListener)
     }
-  }, [onClose, router.events])
+  }, [router.events])
 
   // 点击按钮更改侧边抽屉状态
   const switchSideDrawerVisible = showStatus => {
@@ -79,9 +126,13 @@ const SideBarDrawer = ({
       id='sidebar-wrapper'
       className={`block ${showOnPC ? '' : 'lg:hidden'} top-0`}>
       <div
-        id='sidebar-drawer'
+        id={drawerId}
         ref={drawerRef}
+        role='dialog'
+        aria-modal={isOpen ? 'true' : undefined}
+        aria-label={ariaLabel}
         aria-hidden={!isOpen}
+        tabIndex={-1}
         style={{
           WebkitOverflowScrolling: 'touch',
           WebkitTransform: isOpen

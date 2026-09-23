@@ -67,6 +67,7 @@ const LayoutBase = props => {
   const router = useRouter()
   const shouldAnimate =
     router.pathname === '/' && siteConfig('HOME_ENTRANCE_ANIMATION', true)
+  const animatedBackground = router.pathname === '/'
   const [entrancePhase, setEntrancePhase] = useState(
     shouldAnimate ? 'waiting' : 'done'
   )
@@ -120,7 +121,9 @@ const LayoutBase = props => {
           <div
             className={`matery-home-scene matery-home-entrance-surface absolute inset-0 matery-home-entrance-${entrancePhase}`}>
             <ParticleNetwork
-              meteorsEnabled={entrancePhase === 'done'}
+              key={animatedBackground ? 'animated' : 'static'}
+              animated={animatedBackground}
+              meteorsEnabled={animatedBackground && entrancePhase === 'done'}
               onReady={() => {
                 if (!shouldAnimate || entranceStarted.current) return
                 entranceStarted.current = true
@@ -311,7 +314,7 @@ const LayoutSlug = props => {
         className={`w-full ${fullWidth ? '' : 'lg:max-w-3xl 2xl:max-w-4xl'}`}>
         {/* 文章主体 */}
         <div
-          className={`${fullWidth ? '' : '-mt-32'} transition-all duration-300 rounded-md mx-3 lg:border lg:rounded-xl lg:py-4 bg-white dark:bg-hexo-black-gray  dark:border-black`}>
+          className={`${fullWidth ? '' : '-mt-32'} transition-all duration-300 rounded-2xl mx-3 border border-slate-200/70 lg:py-4 bg-white/95 dark:bg-slate-900/95 dark:border-white/10 shadow-xl shadow-black/10`}>
           {lock && <ArticleLock validPassword={validPassword} />}
 
           {!lock && post && (

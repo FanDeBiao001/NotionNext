@@ -167,9 +167,10 @@ const Header = props => {
               type='button'
               onClick={toggleMenuOpen}
               onTouchEnd={openMenuFromTouch}
+              aria-label={isOpen ? '关闭菜单' : '打开菜单'}
               aria-controls='sidebar-drawer'
               aria-expanded={isOpen}
-              className='w-8 justify-center items-center h-8 cursor-pointer flex lg:hidden'>
+              className='w-11 justify-center items-center h-11 cursor-pointer flex lg:hidden'>
               {isOpen ? (
                 <i className='fas fa-times' />
               ) : (
