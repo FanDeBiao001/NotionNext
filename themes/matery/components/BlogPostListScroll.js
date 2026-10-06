@@ -1,10 +1,16 @@
 import { siteConfig } from '@/lib/config'
 import { useGlobal } from '@/lib/global'
 import { getListByPage } from '@/lib/utils'
+import { useRouter } from 'next/router'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import CONFIG from '../config'
 import BlogPostCard from './BlogPostCard'
 import BlogPostListEmpty from './BlogPostListEmpty'
+import PostSortTabs, {
+  getPostSortMode,
+  POST_SORT_LATEST,
+  sortPostsByPublishDate
+} from './PostSortTabs'
 
 /**
  * 博客列表滚动分页
@@ -20,13 +26,20 @@ const BlogPostListScroll = ({
   siteInfo
 }) => {
   const { NOTION_CONFIG } = useGlobal()
+  const router = useRouter()
   const POSTS_PER_PAGE = siteConfig('POSTS_PER_PAGE', null, NOTION_CONFIG)
   const [page, updatePage] = useState(1)
   const pageSize = Number(POSTS_PER_PAGE) || 10
-  const postsToShow = getListByPage(posts, page, pageSize)
+  const isHomePostList = router.pathname === '/'
+  const sortMode = getPostSortMode(router)
+  const orderedPosts =
+    isHomePostList && sortMode === POST_SORT_LATEST
+      ? sortPostsByPublishDate(posts)
+      : posts
+  const postsToShow = getListByPage(orderedPosts, page, pageSize)
   const loadMoreRef = useRef(null)
   const { locale } = useGlobal()
-  const totalPages = Math.ceil(posts.length / pageSize)
+  const totalPages = Math.ceil(orderedPosts.length / pageSize)
   const hasMore = page < totalPages
 
   const handleGetMore = useCallback(() => {
@@ -42,15 +55,26 @@ const BlogPostListScroll = ({
     return () => observer.disconnect()
   }, [hasMore, handleGetMore, page])
 
+  useEffect(() => {
+    updatePage(1)
+  }, [sortMode])
+
   if (!postsToShow || postsToShow.length === 0) {
     return <BlogPostListEmpty currentSearch={currentSearch} />
   } else {
     return (
       <div id='container' className='w-full'>
+        {isHomePostList && (
+          <div id='posts-wrapper' className='scroll-mt-20'>
+            <PostSortTabs />
+          </div>
+        )}
         {/* 文章列表 */}
         <div className='pt-4 flex flex-wrap pb-12'>
           {postsToShow.map((post, index) => (
-            <div key={post.id} className='xl:w-1/3 md:w-1/2 w-full p-4'>
+            <div
+              key={post.id || post.short_id || post.href}
+              className='xl:w-1/3 md:w-1/2 w-full p-4'>
               <BlogPostCard
                 index={index}
                 post={post}

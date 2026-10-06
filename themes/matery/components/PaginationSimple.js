@@ -17,6 +17,9 @@ const PaginationSimple = ({ page, totalPage }) => {
     .split(/[?#]/)[0]
     .replace(/\/page\/[1-9]\d*/, '')
     .replace(/\/$/, '')
+  const query = {}
+  if (router.query.s) query.s = router.query.s
+  if (router.query.sort === 'latest') query.sort = 'latest'
   return (
     <div className='my-10 mx-6 grid grid-cols-2 items-center font-medium text-black dark:text-gray-100'>
       {showPrevious && (
@@ -27,7 +30,7 @@ const PaginationSimple = ({ page, totalPage }) => {
                 currentPage === 2
                   ? `${pagePrefix}/`
                   : `${pagePrefix}/page/${currentPage - 1}`,
-              query: router.query.s ? { s: router.query.s } : {},
+              query,
               hash: 'posts-wrapper'
             }}
             rel='prev'
@@ -43,7 +46,7 @@ const PaginationSimple = ({ page, totalPage }) => {
           <SmartLink
             href={{
               pathname: `${pagePrefix}/page/${currentPage + 1}`,
-              query: router.query.s ? { s: router.query.s } : {},
+              query,
               hash: 'posts-wrapper'
             }}
             rel='next'
