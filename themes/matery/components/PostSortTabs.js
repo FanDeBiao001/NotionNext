@@ -137,16 +137,28 @@ const PostSortTabs = ({ value, onChange }) => {
   ]
 
   return (
-    <div className='flex min-h-[4.5rem] items-center justify-center px-4'>
+    <div className='flex items-center justify-center px-4 pb-2 pt-4 sm:justify-between'>
+      <div className='hidden items-center gap-2 text-sm font-medium text-slate-200 sm:flex'>
+        <span
+          aria-hidden='true'
+          className='h-1.5 w-1.5 rounded-full bg-indigo-400 shadow-sm shadow-indigo-400/50'
+        />
+        <span>{isChinese ? '全部文章' : 'All posts'}</span>
+      </div>
       <div
         role='group'
         aria-label={isChinese ? '文章排序方式' : 'Post sorting'}
-        className='relative inline-grid grid-cols-2 rounded-xl border border-white/20 bg-slate-900/75 p-1 shadow-lg shadow-black/20 backdrop-blur-xl'>
+        className='relative grid w-full max-w-xs grid-cols-2 rounded-xl border border-white/10 bg-slate-900/60 p-1 shadow-sm shadow-black/10 backdrop-blur-xl sm:w-auto'>
         <span
           aria-hidden='true'
-          className={`absolute bottom-1 left-1 top-1 w-[calc(50%_-_4px)] rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-700 shadow-md shadow-indigo-950/40 ring-1 ring-white/15 transition-transform duration-300 ease-out ${
-            value === POST_SORT_LATEST ? 'translate-x-full' : 'translate-x-0'
-          }`}
+          className='pointer-events-none absolute bottom-1 left-1 top-1 rounded-lg bg-gradient-to-br from-indigo-500/90 to-indigo-700/90 shadow-sm shadow-indigo-950/30 ring-1 ring-white/10 transition-transform duration-300 ease-out'
+          style={{
+            width: 'calc(50% - 4px)',
+            transform:
+              value === POST_SORT_LATEST
+                ? 'translateX(100%)'
+                : 'translateX(0)'
+          }}
         />
         {options.map(option => {
           const selected = option.value === value
@@ -156,7 +168,7 @@ const PostSortTabs = ({ value, onChange }) => {
               type='button'
               aria-pressed={selected}
               onClick={() => onChange(option.value)}
-              className={`relative z-10 min-h-[2.25rem] rounded-lg px-5 text-sm font-medium transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300 ${
+              className={`relative z-10 min-h-8 rounded-lg px-3 text-sm font-medium transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300 sm:px-4 ${
                 selected
                   ? 'text-white'
                   : 'text-slate-300 hover:bg-white/5 hover:text-white'

@@ -71,7 +71,7 @@ const BlogPostListScroll = ({
           </div>
         )}
         {/* 文章列表 */}
-        <div ref={postListRef} className='pt-4 flex flex-wrap pb-12'>
+        <div ref={postListRef} className='pt-2 flex flex-wrap pb-12'>
           {postsToShow.map((post, index) => {
             const postKey = post.id || post.short_id || post.href
             return (
