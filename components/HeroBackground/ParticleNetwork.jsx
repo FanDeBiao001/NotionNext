@@ -31,6 +31,19 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000)
     camera.position.z = 8
 
+    // Visible world-space bounds at the meteor layer. Keeping these in sync
+    // with the camera lets meteors enter from anywhere along the real viewport
+    // edge instead of from two fixed desktop coordinates.
+    let visibleHalfHeight = 0
+    let visibleHalfWidth = 0
+    const updateVisibleBounds = () => {
+      const distance = camera.position.z - RIBBON_Z
+      visibleHalfHeight =
+        Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5)) * distance
+      visibleHalfWidth = visibleHalfHeight * camera.aspect
+    }
+    updateVisibleBounds()
+
     // Renderer
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true })
     renderer.setSize(width, height)
@@ -192,29 +205,53 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
         ribbonIdxArr, ribbonMat,
         ringData, ringIdx: 0, ringLen: 0,
         x: 0, y: 0,
-        dirX: 0, dirY: 0, speed: 0,
-        life: 0, active: false, spawnTimer: 0
+        dirX: 0, dirY: 0,
+        life: 0, age: 0, duration: 0,
+        trailLength: RING_SIZE, widthScale: 1, brightness: 1,
+        tintR: 1, tintG: 1, tintB: 1,
+        active: false, spawnTimer: 0
       }
     }
 
     const starSlots = []
-    for (let i = 0; i < SHOOTING_STAR_COUNT; i++) {
+    const shootingStarCount = isMobile ? 2 : SHOOTING_STAR_COUNT
+    for (let i = 0; i < shootingStarCount; i++) {
       const slot = createStarSlot()
-      slot.spawnTimer = i * 5 // staggered start
+      slot.spawnTimer = 2.5 + i * (isMobile ? 9 : 6) + Math.random() * 4
       starSlots.push(slot)
     }
 
     function spawnStar(slot) {
-      const fromLeft = Math.random() > 0.5
-      const x = fromLeft ? -7 : 7
-      const y = 3.5 + Math.random() * 0.5
-      const speed = 0.04 + Math.random() * 0.04
-      const angle = fromLeft
-        ? (-Math.PI / 4 - Math.random() * 0.2)
-        : (-3 * Math.PI / 4 + Math.random() * 0.2)
+      const entersFromTop = Math.random() < 0.68
+      const travelsRight = Math.random() < 0.5
+      const downwardAngle = 0.5 + Math.random() * 0.55
+      const angle = travelsRight
+        ? -downwardAngle
+        : -Math.PI + downwardAngle
+      const speed = 0.045 + Math.random() * 0.055
 
-      slot.x = x
-      slot.y = y
+      // Most meteors enter at a random point along the top edge. The rest
+      // enter from either side in the upper portion of the sky.
+      if (entersFromTop) {
+        slot.x = (Math.random() * 1.8 - 0.9) * visibleHalfWidth
+        slot.y = visibleHalfHeight + 0.12
+      } else {
+        slot.x = travelsRight
+          ? -visibleHalfWidth - 0.12
+          : visibleHalfWidth + 0.12
+        slot.y = (-0.15 + Math.random() * 1.05) * visibleHalfHeight
+      }
+
+      const warmth = Math.random()
+      slot.tintR = 0.88 + warmth * 0.12
+      slot.tintG = 0.9 + warmth * 0.06
+      slot.tintB = 1 - warmth * 0.16
+      slot.brightness = 0.62 + Math.random() * 0.38
+      slot.widthScale = 0.55 + Math.random() * 0.65
+      slot.trailLength = Math.round(18 + Math.random() * (RING_SIZE - 18))
+      slot.age = 0
+      slot.duration = 1.15 + Math.random() * 1.55
+      slot.life = 0
 
       slot.ringIdx = 0
       slot.ringLen = 0
@@ -222,8 +259,6 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
 
       slot.dirX = Math.cos(angle) * speed
       slot.dirY = Math.sin(angle) * speed
-      slot.speed = speed
-      slot.life = 1.0
       slot.active = true
 
       // Bring into view
@@ -234,7 +269,12 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
       slot.active = false
       slot.ribbon.position.z = -1000
       slot.ribbonGeo.setDrawRange(0, 0)
-      slot.spawnTimer = 10 + Math.random() * 5
+      // Mostly sparse and irregular, with an occasional short follow-up that
+      // resembles a small natural meteor-shower cluster.
+      slot.spawnTimer =
+        Math.random() < 0.12
+          ? 1.5 + Math.random() * 2.5
+          : (isMobile ? 14 : 9) + Math.random() * (isMobile ? 16 : 13)
     }
 
     function buildRibbon(slot) {
@@ -248,7 +288,16 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
         ringData, ringIdx, ribbonPosArr, ribbonColArr, ribbonUvArr,
         ribbonIdxArr, ribbonGeo
       } = slot
-      const { dirX, dirY, life } = slot
+      const {
+        dirX,
+        dirY,
+        life,
+        widthScale,
+        brightness,
+        tintR,
+        tintG,
+        tintB
+      } = slot
 
       let k = 0
       for (let p = 0; p < n; p++) {
@@ -273,11 +322,12 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
         // A monotonic width and color ramp prevents a brighter bulge from
         // appearing halfway along a single meteor trail.
         const intensity = Math.pow(ratio, 1.15)
-        const halfW = 0.5 * MAX_RIBBON_WIDTH * Math.pow(ratio, 0.72)
-        const cr = 0.28 + intensity * 0.48
-        const cg = 0.34 + intensity * 0.48
-        const cb = 0.82 + intensity * 0.18
-        let ca = 0.78 * Math.pow(ratio, 1.08)
+        const halfW =
+          0.5 * MAX_RIBBON_WIDTH * widthScale * Math.pow(ratio, 0.72)
+        const cr = (0.3 + intensity * 0.62) * tintR
+        const cg = (0.36 + intensity * 0.6) * tintG
+        const cb = (0.78 + intensity * 0.22) * tintB
+        let ca = 0.78 * brightness * Math.pow(ratio, 1.08)
         ca *= life
 
         // Left vertex
@@ -300,7 +350,7 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
 
       // Append a forward-facing semicircle to the same mesh. It shares the
       // ribbon's final edge, so there is no overlap, seam, or separate sprite.
-      const headRadius = MAX_RIBBON_WIDTH * 0.5
+      const headRadius = MAX_RIBBON_WIDTH * widthScale * 0.5
       const forwardLen = Math.hypot(dirX, dirY) || 1
       const fx = dirX / forwardLen
       const fy = dirY / forwardLen
@@ -308,10 +358,10 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
       const ny = fx
       const centerIndex = k
       const arcStartIndex = centerIndex + 1
-      const headR = 0.76
-      const headG = 0.82
-      const headB = 1
-      const headA = 0.78 * life
+      const headR = 0.92 * tintR
+      const headG = 0.96 * tintG
+      const headB = tintB
+      const headA = 0.84 * brightness * life
 
       ribbonPosArr[k * 3] = slot.x
       ribbonPosArr[k * 3 + 1] = slot.y
@@ -429,29 +479,30 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
             const subSteps = Math.min(3, Math.max(1, Math.ceil(frameScale)))
             const stepScale = frameScale / subSteps
             for (let step = 0; step < subSteps; step++) {
-              slot.life -= 0.0018 * stepScale
+              slot.age += deltaSeconds / subSteps
+              const progress = Math.min(slot.age / slot.duration, 1)
+              const fadeIn = Math.min(progress / 0.08, 1)
+              const fadeOut = Math.min((1 - progress) / 0.24, 1)
+              slot.life = Math.max(0, Math.min(fadeIn, fadeOut))
 
               slot.x += slot.dirX * stepScale
               slot.y += slot.dirY * stepScale
 
-              // Turbulence
-              const turbulenceScale = Math.sqrt(stepScale)
-              slot.dirX += (Math.random() - 0.5) * 0.0006 * turbulenceScale
-              slot.dirY += (Math.random() - 0.5) * 0.0006 * turbulenceScale
-              const len = Math.hypot(slot.dirX, slot.dirY) || 1
-              slot.dirX = (slot.dirX / len) * slot.speed
-              slot.dirY = (slot.dirY / len) * slot.speed
               slot.ringData[slot.ringIdx * 2] = slot.x
               slot.ringData[slot.ringIdx * 2 + 1] = slot.y
               slot.ringIdx = (slot.ringIdx + 1) % RING_SIZE
-              if (slot.ringLen < RING_SIZE) slot.ringLen++
+              if (slot.ringLen < slot.trailLength) slot.ringLen++
             }
 
             buildRibbon(slot)
 
             const hx = slot.x
             const hy = slot.y
-            if (slot.life <= 0 || Math.abs(hx) > 8.5 || Math.abs(hy) > 5.5) {
+            if (
+              slot.age >= slot.duration ||
+              Math.abs(hx) > visibleHalfWidth + 1.5 ||
+              Math.abs(hy) > visibleHalfHeight + 1.5
+            ) {
               despawnStar(slot)
             }
           }
@@ -496,6 +547,7 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
         const h = window.innerHeight
         camera.aspect = w / h
         camera.updateProjectionMatrix()
+        updateVisibleBounds()
         renderer.setSize(w, h)
         if (!shouldAnimate) renderer.render(scene, camera)
       }, 150)
