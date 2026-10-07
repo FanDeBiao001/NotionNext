@@ -8,7 +8,7 @@ import { useRouter } from 'next/router'
  * @returns {JSX.Element}
  * @constructor
  */
-const PaginationSimple = ({ page, totalPage }) => {
+const PaginationSimple = ({ page, totalPage, sortMode }) => {
   const router = useRouter()
   const currentPage = +page
   const showPrevious = currentPage > 1
@@ -19,7 +19,7 @@ const PaginationSimple = ({ page, totalPage }) => {
     .replace(/\/$/, '')
   const query = {}
   if (router.query.s) query.s = router.query.s
-  if (router.query.sort === 'latest') query.sort = 'latest'
+  if (sortMode === 'latest') query.sort = 'latest'
   return (
     <div className='my-10 mx-6 grid grid-cols-2 items-center font-medium text-black dark:text-gray-100'>
       {showPrevious && (

@@ -1,13 +1,14 @@
 import { siteConfig } from '@/lib/config'
 import { useGlobal } from '@/lib/global'
 import { useRouter } from 'next/router'
+import { useRef } from 'react'
 import BlogPostCard from './BlogPostCard'
 import BlogPostListEmpty from './BlogPostListEmpty'
 import PaginationSimple from './PaginationSimple'
 import PostSortTabs, {
-  getPostSortMode,
   POST_SORT_LATEST,
-  sortPostsByPublishDate
+  sortPostsByPublishDate,
+  usePostSort
 } from './PostSortTabs'
 
 /**
@@ -27,12 +28,13 @@ const BlogPostListPage = ({
 }) => {
   const { NOTION_CONFIG } = useGlobal()
   const router = useRouter()
+  const postListRef = useRef(null)
+  const { sortMode, changeSortMode } = usePostSort(postListRef)
   const POSTS_PER_PAGE = siteConfig('POSTS_PER_PAGE', null, NOTION_CONFIG)
   const totalPage = Math.ceil(postCount / POSTS_PER_PAGE)
   const showPagination = totalPage > 1
   const isHomePostList =
     router.pathname === '/' || router.pathname === '/page/[page]'
-  const sortMode = getPostSortMode(router)
   const detailedPosts = new Map(
     posts.map(post => [post.href || post.slug, post])
   )
@@ -51,20 +53,31 @@ const BlogPostListPage = ({
   } else {
     return (
       <div id='posts-wrapper' className='w-full scroll-mt-20'>
-        {isHomePostList ? <PostSortTabs /> : <div className='pt-6' />}
+        {isHomePostList ? (
+          <PostSortTabs value={sortMode} onChange={changeSortMode} />
+        ) : (
+          <div className='pt-6' />
+        )}
         {/* 文章列表 */}
-        <div className='pt-4 flex flex-wrap pb-12'>
-          {sortedPosts.map((post, index) => (
-            <div
-              key={post.id || post.short_id || post.href}
-              className='xl:w-1/3 md:w-1/2 w-full p-4'>
-              {' '}
-              <BlogPostCard index={index} post={post} siteInfo={siteInfo} />
-            </div>
-          ))}
+        <div ref={postListRef} className='pt-4 flex flex-wrap pb-12'>
+          {sortedPosts.map((post, index) => {
+            const postKey = post.id || post.short_id || post.href
+            return (
+              <div
+                key={postKey}
+                data-post-key={postKey}
+                className='xl:w-1/3 md:w-1/2 w-full p-4 will-change-transform'>
+                <BlogPostCard index={index} post={post} siteInfo={siteInfo} />
+              </div>
+            )
+          })}
         </div>
         {showPagination && (
-          <PaginationSimple page={page} totalPage={totalPage} />
+          <PaginationSimple
+            page={page}
+            totalPage={totalPage}
+            sortMode={sortMode}
+          />
         )}
       </div>
     )

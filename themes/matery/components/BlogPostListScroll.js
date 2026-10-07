@@ -7,9 +7,9 @@ import CONFIG from '../config'
 import BlogPostCard from './BlogPostCard'
 import BlogPostListEmpty from './BlogPostListEmpty'
 import PostSortTabs, {
-  getPostSortMode,
   POST_SORT_LATEST,
-  sortPostsByPublishDate
+  sortPostsByPublishDate,
+  usePostSort
 } from './PostSortTabs'
 
 /**
@@ -27,11 +27,12 @@ const BlogPostListScroll = ({
 }) => {
   const { NOTION_CONFIG } = useGlobal()
   const router = useRouter()
+  const postListRef = useRef(null)
+  const { sortMode, changeSortMode } = usePostSort(postListRef)
   const POSTS_PER_PAGE = siteConfig('POSTS_PER_PAGE', null, NOTION_CONFIG)
   const [page, updatePage] = useState(1)
   const pageSize = Number(POSTS_PER_PAGE) || 10
   const isHomePostList = router.pathname === '/'
-  const sortMode = getPostSortMode(router)
   const orderedPosts =
     isHomePostList && sortMode === POST_SORT_LATEST
       ? sortPostsByPublishDate(posts)
@@ -66,22 +67,26 @@ const BlogPostListScroll = ({
       <div id='container' className='w-full'>
         {isHomePostList && (
           <div id='posts-wrapper' className='scroll-mt-20'>
-            <PostSortTabs />
+            <PostSortTabs value={sortMode} onChange={changeSortMode} />
           </div>
         )}
         {/* 文章列表 */}
-        <div className='pt-4 flex flex-wrap pb-12'>
-          {postsToShow.map((post, index) => (
-            <div
-              key={post.id || post.short_id || post.href}
-              className='xl:w-1/3 md:w-1/2 w-full p-4'>
-              <BlogPostCard
-                index={index}
-                post={post}
-                siteInfo={siteInfo}
-              />
-            </div>
-          ))}
+        <div ref={postListRef} className='pt-4 flex flex-wrap pb-12'>
+          {postsToShow.map((post, index) => {
+            const postKey = post.id || post.short_id || post.href
+            return (
+              <div
+                key={postKey}
+                data-post-key={postKey}
+                className='xl:w-1/3 md:w-1/2 w-full p-4 will-change-transform'>
+                <BlogPostCard
+                  index={index}
+                  post={post}
+                  siteInfo={siteInfo}
+                />
+              </div>
+            )
+          })}
         </div>
 
         {hasMore && (
