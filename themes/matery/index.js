@@ -45,10 +45,9 @@ const ParticleNetwork = dynamic(
   { ssr: false }
 )
 
-const ShimejiPet = dynamic(
-  () => import('@/components/ShimejiPet'),
-  { ssr: false }
-)
+const ShimejiPet = dynamic(() => import('@/components/ShimejiPet'), {
+  ssr: false
+})
 
 // 主题全局状态
 const ThemeGlobalMatery = createContext()
@@ -113,13 +112,15 @@ const LayoutBase = props => {
     <ThemeGlobalMatery.Provider value={{ searchModal }}>
       <div
         id='theme-matery'
-        className={`${siteConfig('FONT_STYLE')} matery-home-phase-${entrancePhase} min-h-screen w-full scroll-smooth`}>
+        className={`${siteConfig('FONT_STYLE')} matery-home-phase-${entrancePhase} min-h-screen w-full scroll-smooth`}
+      >
         <Style />
 
         {/* 全屏固定星空背景 */}
         <div className='fixed inset-0 z-0 overflow-hidden bg-slate-950'>
           <div
-            className={`matery-home-scene matery-home-entrance-surface absolute inset-0 matery-home-entrance-${entrancePhase}`}>
+            className={`matery-home-scene matery-home-entrance-surface absolute inset-0 matery-home-entrance-${entrancePhase}`}
+          >
             <ParticleNetwork
               key={animatedBackground ? 'animated' : 'static'}
               animated={animatedBackground}
@@ -127,7 +128,9 @@ const LayoutBase = props => {
               onReady={() => {
                 if (!shouldAnimate || entranceStarted.current) return
                 entranceStarted.current = true
-                if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                if (
+                  window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                ) {
                   setEntrancePhase('done')
                   return
                 }
@@ -137,8 +140,7 @@ const LayoutBase = props => {
           </div>
         </div>
 
-        <div
-          className='min-h-screen flex flex-col justify-between w-full'>
+        <div className='min-h-screen flex flex-col justify-between w-full'>
           {/* 顶部导航栏 */}
           <Header {...props} />
 
@@ -147,17 +149,20 @@ const LayoutBase = props => {
 
           <main
             id='wrapper'
-            className={`${siteConfig('MATERY_HOME_BANNER_ENABLE', null, CONFIG) ? '' : 'pt-16'} flex-1 w-full pt-0 pb-8 md:px-8 lg:px-24 relative`}>
+            className={`${siteConfig('MATERY_HOME_BANNER_ENABLE', null, CONFIG) ? '' : 'pt-16'} flex-1 w-full pt-0 pb-8 md:px-8 lg:px-24 relative`}
+          >
             {/* 嵌入区域 */}
             <div
               id='container-slot'
-              className={`w-full ${fullWidth ? '' : 'max-w-6xl'} ${post && ' lg:max-w-3xl 2xl:max-w-4xl '} px-3 mx-auto lg:flex lg:space-x-4 justify-center relative z-10`}>
+              className={`w-full ${fullWidth ? '' : 'max-w-6xl'} ${post && ' lg:max-w-3xl 2xl:max-w-4xl '} px-3 mx-auto lg:flex lg:space-x-4 justify-center relative z-10`}
+            >
               {containerSlot}
             </div>
 
             <div
               id='container-inner'
-              className={`w-full min-h-fit ${fullWidth ? '' : 'max-w-6xl'} mx-auto lg:flex lg:space-x-4 justify-center relative z-10`}>
+              className={`w-full min-h-fit ${fullWidth ? '' : 'max-w-6xl'} mx-auto lg:flex lg:space-x-4 justify-center relative z-10`}
+            >
               {children}
             </div>
           </main>
@@ -292,29 +297,30 @@ const LayoutSlug = props => {
   useEffect(() => {
     // 404
     if (!post) {
-      setTimeout(
-        () => {
-          if (isBrowser) {
-            const article = document.querySelector('#article-wrapper #notion-article')
-            if (!article) {
-              router.push('/404').then(() => {
-                console.warn('找不到页面', router.asPath)
-              })
-            }
+      setTimeout(() => {
+        if (isBrowser) {
+          const article = document.querySelector(
+            '#article-wrapper #notion-article'
+          )
+          if (!article) {
+            router.push('/404').then(() => {
+              console.warn('找不到页面', router.asPath)
+            })
           }
-        },
-        waiting404
-      )
+        }
+      }, waiting404)
     }
   }, [post])
   return (
     <>
       <div
         id='inner-wrapper'
-        className={`w-full ${fullWidth ? '' : 'lg:max-w-3xl 2xl:max-w-4xl'}`}>
+        className={`w-full ${fullWidth ? '' : 'lg:max-w-3xl 2xl:max-w-4xl'}`}
+      >
         {/* 文章主体 */}
         <div
-          className={`${fullWidth ? '' : '-mt-32'} transition-all duration-300 rounded-2xl mx-3 border border-slate-200/70 lg:py-4 bg-white/95 dark:bg-slate-900/95 dark:border-white/10 shadow-xl shadow-black/10`}>
+          className={`${fullWidth ? '' : '-mt-32'} transition-all duration-300 rounded-2xl mx-3 border border-slate-200/70 lg:py-4 bg-white/95 dark:bg-slate-900/95 dark:border-white/10 shadow-xl shadow-black/10`}
+        >
           {lock && <ArticleLock validPassword={validPassword} />}
 
           {!lock && post && (
@@ -322,7 +328,10 @@ const LayoutSlug = props => {
               {/* 文章信息 */}
               {post?.type && post?.type === 'Post' && (
                 <>
-                  <div data-wow-delay='.2s' className='wow fadeInUp px-10'>
+                  <div
+                    data-wow-delay='.2s'
+                    className='wow fadeInUp px-2 md:px-10'
+                  >
                     <ArticleInfo post={post} />
                   </div>
                   <hr />
@@ -334,14 +343,15 @@ const LayoutSlug = props => {
                   {/* Notion文章主体 */}
                   <section
                     data-wow-delay='.1s'
-                    className={`wow fadeInUp justify-center mx-auto ${fullWidth ? '' : 'max-w-2xl lg:max-w-full'}`}>
+                    className={`wow fadeInUp justify-center mx-auto ${fullWidth ? '' : 'max-w-2xl lg:max-w-full'}`}
+                  >
                     <WWAds orientation='horizontal' />
                     {post && <NotionPage post={post} />}
                     <AdSlot />
                   </section>
 
                   {/* 分享 */}
-                  <ShareBar post={post} />
+                  <ShareBar post={post} compact />
 
                   {/* 版权说明 */}
                   {post?.type === 'Post' && <ArticleCopyright {...props} />}
@@ -428,7 +438,8 @@ const LayoutCategoryIndex = props => {
                 key={e.name}
                 href={`/category/${e.name}`}
                 passHref
-                legacyBehavior>
+                legacyBehavior
+              >
                 <div className='duration-300 text-md whitespace-nowrap dark:hover:text-white px-5 cursor-pointer py-2 hover:text-indigo-400'>
                   <i className={'mr-4 fas fa-folder'} /> {e.name}({e.count})
                 </div>
@@ -458,7 +469,8 @@ const LayoutTagIndex = props => {
 
         <div
           id='tags-list'
-          className='duration-200 flex flex-wrap justify-center pb-12'>
+          className='duration-200 flex flex-wrap justify-center pb-12'
+        >
           {tagOptions.map(tag => {
             return (
               <div key={tag.name} className='p-2'>

@@ -66,7 +66,8 @@ const BlogPostListPage = ({
               <div
                 key={postKey}
                 data-post-key={postKey}
-                className='xl:w-1/3 md:w-1/2 w-full p-4 will-change-transform'>
+                className='w-full p-3 will-change-transform md:w-1/2 md:p-4 xl:w-1/3'
+              >
                 <BlogPostCard index={index} post={post} siteInfo={siteInfo} />
               </div>
             )

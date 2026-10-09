@@ -22,9 +22,12 @@ const BLOG = {
   LINK: process.env.NEXT_PUBLIC_LINK || 'https://sanhuanshisanshao.net', // 网站地址
   KEYWORDS: process.env.NEXT_PUBLIC_KEYWORD || '三环十三少,博客,Notion', // 网站关键词 英文逗号隔开
   BLOG_FAVICON: process.env.NEXT_PUBLIC_FAVICON || '/favicon.ico', // blog favicon 配置, 默认使用 /public/favicon.ico，支持在线图片，如 https://img.imesong.com/favicon.png
-  BLOG_FAVICON_VERSION: process.env.NEXT_PUBLIC_FAVICON_VERSION || '20260918', // 修改 favicon 后更新版本号，避免浏览器继续使用旧缓存
+  BLOG_FAVICON_ROUND:
+    process.env.NEXT_PUBLIC_FAVICON_ROUND || '/favicon-round.png', // 浏览器标签优先使用的圆形透明 favicon
+  BLOG_FAVICON_VERSION: process.env.NEXT_PUBLIC_FAVICON_VERSION || '20261008', // 修改 favicon 后更新版本号，避免浏览器继续使用旧缓存
   BEI_AN: process.env.NEXT_PUBLIC_BEI_AN || '', // 备案号 闽ICP备XXXXXX
-  BEI_AN_LINK: process.env.NEXT_PUBLIC_BEI_AN_LINK || 'https://beian.miit.gov.cn/', // 备案查询链接，如果用了萌备等备案请在这里填写
+  BEI_AN_LINK:
+    process.env.NEXT_PUBLIC_BEI_AN_LINK || 'https://beian.miit.gov.cn/', // 备案查询链接，如果用了萌备等备案请在这里填写
   BEI_AN_GONGAN: process.env.NEXT_PUBLIC_BEI_AN_GONGAN || '', // 公安备案号，例如 '浙公网安备3xxxxxxxx8号'
 
   // RSS订阅

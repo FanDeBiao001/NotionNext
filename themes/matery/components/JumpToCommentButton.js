@@ -13,19 +13,26 @@ const JumpToCommentButton = () => {
 
   function navToComment() {
     if (document.getElementById('comment')) {
-      window.scrollTo({ top: document.getElementById('comment').offsetTop, behavior: 'smooth' })
+      window.scrollTo({
+        top: document.getElementById('comment').offsetTop,
+        behavior: 'smooth'
+      })
     }
   }
 
   return (
-    <div
+    <button
+      type='button'
+      aria-label='跳转到评论区'
       className='flex justify-center items-center text-center select-none'
-      onClick={navToComment}>
+      onClick={navToComment}
+    >
       <i
+        aria-hidden='true'
         id='jumpToCommentButton'
         className='fas fa-comments transform hover:scale-105 duration-200 text-white bg-black w-10 h-10 rounded-full dark:bg-black cursor-pointer flex justify-center items-center'
       />
-    </div>
+    </button>
   )
 }
 

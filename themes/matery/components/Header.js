@@ -48,13 +48,15 @@ const Header = props => {
           nav && nav.classList.replace('backdrop-blur-md', 'backdrop-blur-none')
           nav && nav.classList.replace('text-white', 'text-gray-200')
           nav && nav.classList.replace('shadow-xl', 'shadow-none')
-          nav && nav.classList.replace('dark:bg-black/70', 'dark:bg-transparent')
+          nav &&
+            nav.classList.replace('dark:bg-black/70', 'dark:bg-transparent')
         } else {
           nav && nav.classList.replace('bg-transparent', 'bg-black/70')
           nav && nav.classList.replace('backdrop-blur-none', 'backdrop-blur-md')
           nav && nav.classList.replace('text-gray-200', 'text-white')
           nav && nav.classList.replace('shadow-none', 'shadow-xl')
-          nav && nav.classList.replace('dark:bg-transparent', 'dark:bg-black/70')
+          nav &&
+            nav.classList.replace('dark:bg-transparent', 'dark:bg-black/70')
         }
 
         if (!showNav) {
@@ -118,7 +120,8 @@ const Header = props => {
             <SmartLink
               href={'/category'}
               passHref
-              className='mb-3 text-gray-400 hover:text-black dark:text-gray-400 dark:hover:text-white hover:underline cursor-pointer'>
+              className='mb-3 text-gray-400 hover:text-black dark:text-gray-400 dark:hover:text-white hover:underline cursor-pointer'
+            >
               {locale.COMMON.MORE} <i className='fas fa-angle-double-right' />
             </SmartLink>
           </div>
@@ -139,7 +142,8 @@ const Header = props => {
             <SmartLink
               href={'/tag'}
               passHref
-              className='text-gray-400 hover:text-black  dark:hover:text-white hover:underline cursor-pointer'>
+              className='text-gray-400 hover:text-black  dark:hover:text-white hover:underline cursor-pointer'
+            >
               {locale.COMMON.MORE} <i className='fas fa-angle-double-right' />
             </SmartLink>
           </div>
@@ -159,7 +163,8 @@ const Header = props => {
         id='sticky-nav'
         className={
           'flex top-0 shadow-none fixed bg-transparent dark:bg-transparent backdrop-blur-none text-gray-200 w-full z-30 transform transition-all duration-300'
-        }>
+        }
+      >
         <div className='w-full flex justify-between items-center px-4 py-2'>
           {/* 左侧功能 */}
           <div className='justify-start items-center block lg:hidden '>
@@ -170,7 +175,8 @@ const Header = props => {
               aria-label={isOpen ? '关闭菜单' : '打开菜单'}
               aria-controls='sidebar-drawer'
               aria-expanded={isOpen}
-              className='w-11 justify-center items-center h-11 cursor-pointer flex lg:hidden'>
+              className='w-11 justify-center items-center h-11 cursor-pointer flex lg:hidden'
+            >
               {isOpen ? (
                 <i className='fas fa-times' />
               ) : (
@@ -197,7 +203,7 @@ const Header = props => {
       </div>
 
       <SideBarDrawer isOpen={isOpen} onClose={toggleMenuClose}>
-        <SideBar {...props} />
+        <SideBar {...props} onClose={toggleMenuClose} />
       </SideBarDrawer>
     </div>
   )

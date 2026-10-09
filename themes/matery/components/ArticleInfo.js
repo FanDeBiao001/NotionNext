@@ -21,17 +21,18 @@ export const ArticleInfo = props => {
         )}
       </div>
 
-      <div className='flex flex-wrap gap-3 mt-5 text-sm'>
+      <div className='mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs sm:text-sm md:mt-5'>
         {post?.type !== 'Page' && (
           <>
             <SmartLink
               href={`/archive#${formatDateFmt(post?.publishDate, 'yyyy-MM')}`}
               passHref
-              className='cursor-pointer whitespace-nowrap'>
+              className='cursor-pointer whitespace-nowrap'
+            >
               <i className='far fa-calendar-minus fa-fw' />{' '}
               {locale.COMMON.POST_TIME}: {post?.publishDay}
             </SmartLink>
-            <span className='whitespace-nowrap'>
+            <span className='hidden whitespace-nowrap md:inline'>
               <i className='far fa-calendar-check fa-fw' />
               {locale.COMMON.LAST_EDITED_TIME}: {post.lastEditedDay}
             </span>
@@ -39,7 +40,12 @@ export const ArticleInfo = props => {
               <i className='mr-1 fas fa-eye' />
               <span className='busuanzi_value_page_pv' />
             </span>
-            <WordCount wordCount={post.wordCount} readTime={post.readTime} />
+            <span className='hidden md:inline-flex'>
+              <WordCount wordCount={post.wordCount} readTime={post.readTime} />
+            </span>
+            <span className='whitespace-nowrap md:hidden'>
+              <i className='far fa-clock fa-fw' /> {post.readTime || 1} 分钟
+            </span>
           </>
         )}
       </div>

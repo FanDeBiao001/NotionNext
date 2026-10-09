@@ -3,13 +3,8 @@ import { siteConfig } from '@/lib/config'
 
 // 过滤 <a> 标签不能识别的 props
 const filterDOMProps = props => {
-  const {
-    passHref,
-    legacyBehavior,
-    placeholderSrc,
-    fallbackSrc,
-    ...rest
-  } = props
+  const { passHref, legacyBehavior, placeholderSrc, fallbackSrc, ...rest } =
+    props
   return rest
 }
 
@@ -55,17 +50,22 @@ const SmartLink = ({ href, children, ...rest }) => {
     const params = new URLSearchParams(queryString)
     const preserved = {}
     for (const [key, value] of params.entries()) {
+      // 文章排序只属于首页列表。分页组件会显式携带它，不应污染
+      // 分类、标签、文章详情等其它站内链接。
+      if (key === 'sort') continue
       if (value !== '') preserved[key] = value
     }
     return preserved
   }
 
   const mergePreservedQueryForStringHref = value => {
-    if (typeof value !== 'string' || !value || value.startsWith('#')) return value
+    if (typeof value !== 'string' || !value || value.startsWith('#'))
+      return value
     const preservedQuery = getPersistedQuery()
     if (Object.keys(preservedQuery).length === 0) return value
 
-    const isAbsolute = value.startsWith('http://') || value.startsWith('https://')
+    const isAbsolute =
+      value.startsWith('http://') || value.startsWith('https://')
     const url = new URL(value, LINK)
     Object.entries(preservedQuery).forEach(([key, paramValue]) => {
       if (!url.searchParams.has(key)) {
@@ -100,7 +100,8 @@ const SmartLink = ({ href, children, ...rest }) => {
         href={externalUrl}
         target='_blank'
         rel='noopener noreferrer'
-        {...filterDOMProps(rest)}>
+        {...filterDOMProps(rest)}
+      >
         {children}
       </a>
     )

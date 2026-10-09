@@ -44,19 +44,19 @@ const JumpToTopButton = ({ showPercent = true, percent }) => {
     return <></>
   }
 
-  if (!siteConfig('MATERY_WIDGET_TO_TOP', null, CONFIG)) {
-    return <></>
-  }
-
   return (
-    <div
+    <button
+      type='button'
+      aria-label={locale.POST.TOP}
       className={`flex justify-center items-center text-center select-none transition-all duration-300 ${visible ? 'opacity-100 scale-100' : 'opacity-0 scale-0 pointer-events-none'}`}
-      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+    >
       <i
+        aria-hidden='true'
         title={locale.POST.TOP}
         className='fas fa-arrow-up transform hover:scale-105 duration-200 text-white bg-black w-10 h-10 rounded-full dark:bg-hexo-black-gray cursor-pointer flex justify-center items-center'
       />
-    </div>
+    </button>
   )
 }
 

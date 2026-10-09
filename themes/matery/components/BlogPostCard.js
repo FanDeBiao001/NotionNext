@@ -23,6 +23,11 @@ const BlogPostCard = ({ index, post, showSummary, siteInfo }) => {
     siteConfig('MATERY_POST_LIST_COVER', null, CONFIG) &&
     post?.pageCoverThumbnail
   const delay = (index % 3) * 300
+  const visibleTags = post?.tagItems?.slice(0, 2) || []
+  const hiddenTagCount = Math.max(
+    (post?.tagItems?.length || 0) - visibleTags.length,
+    0
+  )
 
   return (
     <article
@@ -31,19 +36,19 @@ const BlogPostCard = ({ index, post, showSummary, siteInfo }) => {
       data-aos-delay={delay}
       data-aos-once='true'
       data-aos-anchor-placement='top-bottom'
-      className='w-full mb-4 overflow-hidden rounded-2xl border border-white/15 bg-slate-900/90 text-slate-100 shadow-xl shadow-black/20 transition-colors hover:border-indigo-300/40'>
-      {/* 固定高度 ，空白用图片拉升填充 */}
-      <header className='group flex flex-col h-80 justify-between'>
+      className='mb-2 h-full w-full overflow-hidden rounded-2xl border border-white/15 bg-slate-900/90 text-slate-100 shadow-xl shadow-black/20 transition-colors hover:border-indigo-300/40 md:mb-4'
+    >
+      <header className='group flex h-full flex-col'>
         {/* 头部图片 填充卡片 */}
         {showPageCover && (
           <SmartLink href={post?.href} passHref legacyBehavior>
-            <div className='flex flex-grow w-full relative duration-200 cursor-pointer transform overflow-hidden'>
+            <div className='relative flex h-48 w-full flex-none cursor-pointer transform overflow-hidden duration-200 sm:h-52 lg:h-56'>
               <LazyImage
                 src={post?.pageCoverThumbnail}
                 alt={post.title}
                 className='h-full w-full group-hover:scale-110 group-hover:brightness-75 transform object-cover duration-500'
               />
-              <h2 className='absolute bottom-0 left-0 text-white p-6 text-2xl replace break-words w-full shadow-text z-30'>
+              <h2 className='replace shadow-text absolute bottom-0 left-0 z-30 w-full break-words p-4 text-xl text-white md:p-5 md:text-2xl'>
                 {siteConfig('POST_TITLE_ICON') && (
                   <NotionIcon icon={post.pageIcon} />
                 )}
@@ -58,21 +63,22 @@ const BlogPostCard = ({ index, post, showSummary, siteInfo }) => {
         )}
 
         {/* 文字描述 */}
-        <div>
+        <div className='flex flex-1 flex-col justify-between'>
           {/* 描述 */}
           <div className='px-4 flex flex-col w-full text-slate-200'>
             {(!showPreview || showSummary) && post.summary && (
-              <p className='replace my-2 text-sm font-light leading-7 line-clamp-3'>
+              <p className='replace my-2 line-clamp-2 text-sm font-light leading-6 md:line-clamp-3 md:leading-7'>
                 {post.summary}
               </p>
             )}
 
-            <div className='text-slate-300 justify-between flex my-2 gap-2'>
+            <div className='my-2 flex items-center justify-between gap-2 text-slate-300'>
               <div>
                 <SmartLink
                   href={`/archive#${formatDateFmt(post?.publishDate, 'yyyy-MM')}`}
                   passHref
-                  className='font-light hover:underline cursor-pointer text-sm leading-4 mr-3'>
+                  className='mr-2 cursor-pointer whitespace-nowrap text-xs font-light leading-4 hover:underline sm:text-sm'
+                >
                   <i className='far fa-clock mr-1' />
                   {post.date?.start_date || post.lastEditedDay}
                 </SmartLink>
@@ -84,7 +90,8 @@ const BlogPostCard = ({ index, post, showSummary, siteInfo }) => {
               <SmartLink
                 href={`/category/${post.category}`}
                 passHref
-                className='cursor-pointer font-light text-sm hover:underline hover:text-indigo-300 transform'>
+                className='max-w-[45%] transform truncate cursor-pointer text-xs font-light hover:text-indigo-300 hover:underline sm:text-sm'
+              >
                 <i className='mr-1 far fa-folder' />
                 {post.category}
               </SmartLink>
@@ -98,9 +105,14 @@ const BlogPostCard = ({ index, post, showSummary, siteInfo }) => {
                 <div className='md:flex-nowrap flex-wrap md:justify-start inline-block'>
                   <div>
                     {' '}
-                    {post.tagItems.map(tag => (
+                    {visibleTags.map(tag => (
                       <TagItemMini key={tag.name} tag={tag} />
                     ))}
+                    {hiddenTagCount > 0 && (
+                      <span className='ml-1 inline-flex h-6 items-center rounded-full border border-white/10 px-2 text-xs text-slate-400'>
+                        +{hiddenTagCount}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

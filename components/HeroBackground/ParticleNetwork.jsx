@@ -12,7 +12,11 @@ const HEAD_CAP_SEGMENTS = 10
 const RIBBON_Z = 2.97
 const MAX_RIBBON_WIDTH = 0.18
 
-export default function ParticleNetwork({ onReady, meteorsEnabled = true, animated = true }) {
+export default function ParticleNetwork({
+  onReady,
+  meteorsEnabled = true,
+  animated = true
+}) {
   const mountRef = useRef(null)
   const onReadyRef = useRef(onReady)
   const meteorsEnabledRef = useRef(meteorsEnabled)
@@ -23,8 +27,11 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
     const width = window.innerWidth
     const height = window.innerHeight
     const isMobile = window.matchMedia('(max-width: 767px)').matches
-    const particleCount = isMobile ? MOBILE_PARTICLE_COUNT : DESKTOP_PARTICLE_COUNT
-    const shouldAnimate = animated && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const particleCount = isMobile
+      ? MOBILE_PARTICLE_COUNT
+      : DESKTOP_PARTICLE_COUNT
+    const shouldAnimate =
+      animated && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     // Scene
     const scene = new THREE.Scene()
@@ -47,7 +54,9 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
     // Renderer
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true })
     renderer.setSize(width, height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.25 : 2))
+    renderer.setPixelRatio(
+      Math.min(window.devicePixelRatio, isMobile ? 1.25 : 2)
+    )
     const mountElement = mountRef.current
     mountElement.appendChild(renderer.domElement)
 
@@ -57,7 +66,14 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
       canvas.width = size
       canvas.height = size
       const ctx = canvas.getContext('2d')
-      const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
+      const gradient = ctx.createRadialGradient(
+        size / 2,
+        size / 2,
+        0,
+        size / 2,
+        size / 2,
+        size / 2
+      )
       gradient.addColorStop(0, innerColor)
       gradient.addColorStop(0.2, innerColor)
       gradient.addColorStop(1, outerColor)
@@ -66,7 +82,10 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
       return new THREE.CanvasTexture(canvas)
     }
 
-    const glowTex = createGlowTexture('rgba(160,180,255,1)', 'rgba(160,180,255,0)')
+    const glowTex = createGlowTexture(
+      'rgba(160,180,255,1)',
+      'rgba(160,180,255,0)'
+    )
 
     // ==========================================
     // Particles — with per-particle brightness variation (vertexColors)
@@ -92,7 +111,10 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
     }
 
     const geometry = new THREE.BufferGeometry()
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+    geometry.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute(positions, 3)
+    )
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
 
     const material = new THREE.PointsMaterial({
@@ -148,7 +170,10 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
     }
 
     const lineGeo = new THREE.BufferGeometry()
-    lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(lineVerts, 3))
+    lineGeo.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute(lineVerts, 3)
+    )
     const lineMaterial = new THREE.LineBasicMaterial({
       color: '#5865ff',
       transparent: true,
@@ -161,8 +186,7 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
     // Shooting star — pre-allocated slot pool (no per-spawn allocations)
     // ==========================================
     const MAX_RIBBON_VERTS = RING_SIZE * 2 + HEAD_CAP_SEGMENTS + 2
-    const MAX_RIBBON_INDICES =
-      (RING_SIZE - 1) * 6 + HEAD_CAP_SEGMENTS * 3
+    const MAX_RIBBON_INDICES = (RING_SIZE - 1) * 6 + HEAD_CAP_SEGMENTS * 3
 
     function createStarSlot() {
       // Ribbon
@@ -181,15 +205,25 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
         ribbonIdxArr[off + 5] = vi + 2
       }
       const ribbonGeo = new THREE.BufferGeometry()
-      ribbonGeo.setAttribute('position', new THREE.BufferAttribute(ribbonPosArr, 3))
-      ribbonGeo.setAttribute('color', new THREE.BufferAttribute(ribbonColArr, 4))
+      ribbonGeo.setAttribute(
+        'position',
+        new THREE.BufferAttribute(ribbonPosArr, 3)
+      )
+      ribbonGeo.setAttribute(
+        'color',
+        new THREE.BufferAttribute(ribbonColArr, 4)
+      )
       ribbonGeo.setAttribute('uv', new THREE.BufferAttribute(ribbonUvArr, 2))
       ribbonGeo.setIndex(new THREE.BufferAttribute(ribbonIdxArr, 1))
       ribbonGeo.setDrawRange(0, 0)
       const ribbonMat = new THREE.MeshBasicMaterial({
-        vertexColors: true, map: glowTex,
-        blending: THREE.AdditiveBlending, transparent: true,
-        depthWrite: false, side: THREE.DoubleSide, toneMapped: false
+        vertexColors: true,
+        map: glowTex,
+        blending: THREE.AdditiveBlending,
+        transparent: true,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+        toneMapped: false
       })
       const ribbon = new THREE.Mesh(ribbonGeo, ribbonMat)
       ribbon.frustumCulled = true
@@ -201,15 +235,31 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
       const ringData = new Float32Array(RING_SIZE * 2)
 
       return {
-        ribbon, ribbonGeo, ribbonPosArr, ribbonColArr, ribbonUvArr,
-        ribbonIdxArr, ribbonMat,
-        ringData, ringIdx: 0, ringLen: 0,
-        x: 0, y: 0,
-        dirX: 0, dirY: 0,
-        life: 0, age: 0, duration: 0,
-        trailLength: RING_SIZE, widthScale: 1, brightness: 1,
-        tintR: 1, tintG: 1, tintB: 1,
-        active: false, spawnTimer: 0
+        ribbon,
+        ribbonGeo,
+        ribbonPosArr,
+        ribbonColArr,
+        ribbonUvArr,
+        ribbonIdxArr,
+        ribbonMat,
+        ringData,
+        ringIdx: 0,
+        ringLen: 0,
+        x: 0,
+        y: 0,
+        dirX: 0,
+        dirY: 0,
+        life: 0,
+        age: 0,
+        duration: 0,
+        trailLength: RING_SIZE,
+        widthScale: 1,
+        brightness: 1,
+        tintR: 1,
+        tintG: 1,
+        tintB: 1,
+        active: false,
+        spawnTimer: 0
       }
     }
 
@@ -225,9 +275,7 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
       const entersFromTop = Math.random() < 0.68
       const travelsRight = Math.random() < 0.5
       const downwardAngle = 0.5 + Math.random() * 0.55
-      const angle = travelsRight
-        ? -downwardAngle
-        : -Math.PI + downwardAngle
+      const angle = travelsRight ? -downwardAngle : -Math.PI + downwardAngle
       const speed = 0.045 + Math.random() * 0.055
 
       // Most meteors enter at a random point along the top edge. The rest
@@ -285,23 +333,20 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
       }
 
       const {
-        ringData, ringIdx, ribbonPosArr, ribbonColArr, ribbonUvArr,
-        ribbonIdxArr, ribbonGeo
+        ringData,
+        ringIdx,
+        ribbonPosArr,
+        ribbonColArr,
+        ribbonUvArr,
+        ribbonIdxArr,
+        ribbonGeo
       } = slot
-      const {
-        dirX,
-        dirY,
-        life,
-        widthScale,
-        brightness,
-        tintR,
-        tintG,
-        tintB
-      } = slot
+      const { dirX, dirY, life, widthScale, brightness, tintR, tintG, tintB } =
+        slot
 
       let k = 0
       for (let p = 0; p < n; p++) {
-        const h = (n - 1) - p
+        const h = n - 1 - p
         const idx = (ringIdx - 1 - h + RING_SIZE) % RING_SIZE
         const cx = ringData[idx * 2]
         const cy = ringData[idx * 2 + 1]
@@ -314,7 +359,10 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
         let dx = ringData[iNewer * 2] - ringData[iOlder * 2]
         let dy = ringData[iNewer * 2 + 1] - ringData[iOlder * 2 + 1]
         const dl = Math.hypot(dx, dy)
-        if (dl < 1e-6) { dx = dirX; dy = dirY }
+        if (dl < 1e-6) {
+          dx = dirX
+          dy = dirY
+        }
         const nx = -dy / (dl || 1)
         const ny = dx / (dl || 1)
 
@@ -334,17 +382,23 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
         ribbonPosArr[k * 3] = cx + nx * halfW
         ribbonPosArr[k * 3 + 1] = cy + ny * halfW
         ribbonPosArr[k * 3 + 2] = RIBBON_Z
-        ribbonColArr[k * 4] = cr; ribbonColArr[k * 4 + 1] = cg
-        ribbonColArr[k * 4 + 2] = cb; ribbonColArr[k * 4 + 3] = ca
-        ribbonUvArr[k * 2] = 0; ribbonUvArr[k * 2 + 1] = 0.5
+        ribbonColArr[k * 4] = cr
+        ribbonColArr[k * 4 + 1] = cg
+        ribbonColArr[k * 4 + 2] = cb
+        ribbonColArr[k * 4 + 3] = ca
+        ribbonUvArr[k * 2] = 0
+        ribbonUvArr[k * 2 + 1] = 0.5
         k++
         // Right vertex
         ribbonPosArr[k * 3] = cx - nx * halfW
         ribbonPosArr[k * 3 + 1] = cy - ny * halfW
         ribbonPosArr[k * 3 + 2] = RIBBON_Z
-        ribbonColArr[k * 4] = cr; ribbonColArr[k * 4 + 1] = cg
-        ribbonColArr[k * 4 + 2] = cb; ribbonColArr[k * 4 + 3] = ca
-        ribbonUvArr[k * 2] = 1; ribbonUvArr[k * 2 + 1] = 0.5
+        ribbonColArr[k * 4] = cr
+        ribbonColArr[k * 4 + 1] = cg
+        ribbonColArr[k * 4 + 2] = cb
+        ribbonColArr[k * 4 + 3] = ca
+        ribbonUvArr[k * 2] = 1
+        ribbonUvArr[k * 2 + 1] = 0.5
         k++
       }
 
@@ -378,8 +432,7 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
         const theta = Math.PI / 2 - (Math.PI * s) / HEAD_CAP_SEGMENTS
         const along = Math.cos(theta)
         const across = Math.sin(theta)
-        ribbonPosArr[k * 3] =
-          slot.x + (fx * along + nx * across) * headRadius
+        ribbonPosArr[k * 3] = slot.x + (fx * along + nx * across) * headRadius
         ribbonPosArr[k * 3 + 1] =
           slot.y + (fy * along + ny * across) * headRadius
         ribbonPosArr[k * 3 + 2] = RIBBON_Z
@@ -413,10 +466,7 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
         ribbonIdxArr[off + 2] = arcStartIndex + s + 1
       }
 
-      ribbonGeo.setDrawRange(
-        0,
-        stripIndexCount + HEAD_CAP_SEGMENTS * 3
-      )
+      ribbonGeo.setDrawRange(0, stripIndexCount + HEAD_CAP_SEGMENTS * 3)
       ribbonGeo.attributes.position.needsUpdate = true
       ribbonGeo.attributes.color.needsUpdate = true
       ribbonGeo.attributes.uv.needsUpdate = true
@@ -426,10 +476,12 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
     // ==========================================
     // Mouse interaction
     // ==========================================
-    let mouseX = 0, mouseY = 0
-    let targetX = 0, targetY = 0
+    let mouseX = 0,
+      mouseY = 0
+    let targetX = 0,
+      targetY = 0
 
-    const onMouseMove = (e) => {
+    const onMouseMove = e => {
       targetX = (e.clientX / window.innerWidth - 0.5) * 0.5
       targetY = (e.clientY / window.innerHeight - 0.5) * 0.3
     }
@@ -439,7 +491,8 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
     // ==========================================
     // Animation
     // ==========================================
-    let baseRotY = 0, baseRotX = 0
+    let baseRotY = 0,
+      baseRotX = 0
     let animationId = null
     let hasRenderedFirstFrame = false
     let lastFrameTime = performance.now()
@@ -450,7 +503,10 @@ export default function ParticleNetwork({ onReady, meteorsEnabled = true, animat
       // Keep motion tied to elapsed time instead of the number of rendered
       // frames. Expensive overlays can lower mobile FPS; frame-based movement
       // otherwise appears to slow down and then suddenly speed up afterwards.
-      const deltaSeconds = Math.min(Math.max((now - lastFrameTime) / 1000, 0), 0.05)
+      const deltaSeconds = Math.min(
+        Math.max((now - lastFrameTime) / 1000, 0),
+        0.05
+      )
       const frameScale = deltaSeconds * 60
       lastFrameTime = now
 

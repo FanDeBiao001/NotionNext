@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 
 const QrCode = dynamic(() => import('@/components/QrCode'), { ssr: false })
 const BASE_BUTTON_CLASS =
-  'cursor-pointer rounded-full mx-1 w-8 h-8 flex items-center justify-center text-white'
+  'cursor-pointer rounded-full mx-1 w-9 h-9 flex items-center justify-center text-white transition-transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300'
 // 统一图标样式：text-sm + leading-none(强制 line-height:1) 消除 baseline 偏移
 const ICON_CLASS = 'text-sm leading-none'
 
@@ -66,7 +66,7 @@ const SHARE_BG_CLASS = {
  * @param {*} param0
  * @returns
  */
-const ShareButtons = ({ post }) => {
+const ShareButtons = ({ post, compact = false }) => {
   const router = useRouter()
   const [shareUrl, setShareUrl] = useState(siteConfig('LINK') + router.asPath)
   const title = post?.title || siteConfig('TITLE')
@@ -80,6 +80,14 @@ const ShareButtons = ({ post }) => {
   const titleWithSiteInfo = title + ' | ' + siteConfig('TITLE')
   const { locale } = useGlobal()
   const [qrCodeShow, setQrCodeShow] = useState(false)
+  const [showAll, setShowAll] = useState(false)
+  const compactPriority = ['link', 'wechat', 'weibo', 'twitter']
+  const compactServices = [
+    ...compactPriority.filter(service => services.includes(service)),
+    ...services.filter(service => !compactPriority.includes(service))
+  ].slice(0, 4)
+  const visibleServices = compact && !showAll ? compactServices : services
+  const hasMoreServices = compact && services.length > compactServices.length
 
   const copyUrl = () => {
     const decodedUrl = decodeURIComponent(shareUrl)
@@ -175,7 +183,8 @@ const ShareButtons = ({ post }) => {
         key={service}
         onClick={() => openShareWindow(shareLink)}
         className={`${BASE_BUTTON_CLASS} ${bgClass}`}
-        title={service}>
+        title={service}
+      >
         <i className={`${iconClass} ${ICON_CLASS}`} />
       </button>
     )
@@ -185,8 +194,8 @@ const ShareButtons = ({ post }) => {
   }, [])
 
   return (
-    <>
-      {services.map(singleService => {
+    <div className='flex max-w-full flex-wrap items-center justify-center gap-y-2 md:justify-end'>
+      {visibleServices.map(singleService => {
         switch (singleService) {
           case 'facebook':
           case 'messenger':
@@ -222,7 +231,8 @@ const ShareButtons = ({ post }) => {
                   )
                 }
                 className={`${BASE_BUTTON_CLASS} bg-blue-600`}
-                title={singleService}>
+                title={singleService}
+              >
                 <i className={`fab fa-qq ${ICON_CLASS}`} />
               </button>
             )
@@ -234,7 +244,8 @@ const ShareButtons = ({ post }) => {
                 aria-label={singleService}
                 key={singleService}
                 className={`${BASE_BUTTON_CLASS} bg-green-600`}
-                title={singleService}>
+                title={singleService}
+              >
                 <i className={`fab fa-weixin ${ICON_CLASS}`} />
                 <div className='absolute'>
                   <div
@@ -242,7 +253,8 @@ const ShareButtons = ({ post }) => {
                     className={
                       (qrCodeShow ? 'opacity-100 ' : ' invisible opacity-0') +
                       ' z-40 absolute bottom-10 -left-10 bg-white shadow-xl transition-all duration-200 text-center'
-                    }>
+                    }
+                  >
                     <div className='p-2 mt-1 w-28 h-28'>
                       {qrCodeShow && <QrCode value={shareUrl} />}
                     </div>
@@ -260,7 +272,8 @@ const ShareButtons = ({ post }) => {
                 key={singleService}
                 onClick={copyUrl}
                 className={`${BASE_BUTTON_CLASS} bg-yellow-500`}
-                title={singleService}>
+                title={singleService}
+              >
                 <i className={`fas fa-link ${ICON_CLASS}`} />
               </button>
             )
@@ -269,12 +282,16 @@ const ShareButtons = ({ post }) => {
               <button
                 aria-label={singleService}
                 key={singleService}
-                onClick={() => openRedirectShare('https://link.csdn.net/?target=')}
+                onClick={() =>
+                  openRedirectShare('https://link.csdn.net/?target=')
+                }
                 className='cursor-pointer rounded-full mx-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500'
-                title={singleService}>
+                title={singleService}
+              >
                 <div
                   className='w-8 h-8 rounded-full flex items-center justify-center'
-                  style={{ backgroundColor: '#ff6a00' }}>
+                  style={{ backgroundColor: '#ff6a00' }}
+                >
                   <Image
                     src='/svg/csdn.svg'
                     alt='CSDN'
@@ -291,12 +308,16 @@ const ShareButtons = ({ post }) => {
               <button
                 aria-label={singleService}
                 key={singleService}
-                onClick={() => openRedirectShare('https://link.juejin.cn/?target=')}
+                onClick={() =>
+                  openRedirectShare('https://link.juejin.cn/?target=')
+                }
                 className='cursor-pointer rounded-full mx-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500'
-                title={singleService}>
+                title={singleService}
+              >
                 <div
                   className='w-8 h-8 rounded-full flex items-center justify-center'
-                  style={{ backgroundColor: '#5dade2' }}>
+                  style={{ backgroundColor: '#5dade2' }}
+                >
                   <Image
                     src='/svg/juejin.svg'
                     alt='掘金'
@@ -309,10 +330,27 @@ const ShareButtons = ({ post }) => {
               </button>
             )
           default:
-            return <></>
+            return null
         }
       })}
-    </>
+      {hasMoreServices && (
+        <button
+          type='button'
+          aria-expanded={showAll}
+          onClick={() => setShowAll(value => !value)}
+          className={`${BASE_BUTTON_CLASS} border border-white/15 bg-slate-700 transition-colors hover:bg-slate-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-300`}
+          title={showAll ? '收起分享方式' : '更多分享方式'}
+        >
+          <i
+            aria-hidden='true'
+            className={`${showAll ? 'fas fa-minus' : 'fas fa-ellipsis-h'} ${ICON_CLASS}`}
+          />
+          <span className='sr-only'>
+            {showAll ? '收起分享方式' : '更多分享方式'}
+          </span>
+        </button>
+      )}
+    </div>
   )
 }
 
