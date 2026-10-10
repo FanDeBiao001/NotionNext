@@ -21,7 +21,10 @@ const PaginationSimple = ({ page, totalPage, sortMode }) => {
   if (router.query.s) query.s = router.query.s
   if (sortMode === 'latest') query.sort = 'latest'
   return (
-    <div className='my-10 mx-6 grid grid-cols-2 items-center font-medium text-black dark:text-gray-100'>
+    <nav
+      aria-label='文章分页'
+      className='my-10 grid w-full grid-cols-2 items-center px-3 font-medium text-black dark:text-gray-100 md:px-4'
+    >
       {showPrevious && (
         <div className='justify-self-start'>
           <SmartLink
@@ -35,8 +38,12 @@ const PaginationSimple = ({ page, totalPage, sortMode }) => {
             }}
             rel='prev'
             aria-label={`上一页，第 ${currentPage - 1} 页`}
-            className='flex h-11 min-w-11 items-center justify-center rounded-full bg-indigo-700 px-3.5 text-white transition-colors hover:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300'>
-            <i aria-hidden='true' className='fas fa-angle-left text-2xl' />
+            className='inline-flex h-11 w-11 items-center justify-center rounded-full bg-indigo-700 text-white transition-colors hover:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300'
+          >
+            <i
+              aria-hidden='true'
+              className='fas fa-angle-left text-2xl leading-none'
+            />
           </SmartLink>
         </div>
       )}
@@ -51,12 +58,16 @@ const PaginationSimple = ({ page, totalPage, sortMode }) => {
             }}
             rel='next'
             aria-label={`下一页，第 ${currentPage + 1} 页`}
-            className='flex h-11 min-w-11 items-center justify-center rounded-full bg-indigo-700 px-4 text-white transition-colors hover:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300'>
-            <i aria-hidden='true' className='fas fa-angle-right text-2xl' />
+            className='inline-flex h-11 w-11 items-center justify-center rounded-full bg-indigo-700 text-white transition-colors hover:bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300'
+          >
+            <i
+              aria-hidden='true'
+              className='fas fa-angle-right text-2xl leading-none'
+            />
           </SmartLink>
         </div>
       )}
-    </div>
+    </nav>
   )
 }
 
