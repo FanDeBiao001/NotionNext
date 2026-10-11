@@ -1,6 +1,13 @@
 import { siteConfig } from '@/lib/config'
+import { isPostListPath } from '@/lib/utils/postSortUrl'
 import { useRouter } from 'next/router'
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState
+} from 'react'
 
 const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? useLayoutEffect : useEffect
@@ -9,7 +16,8 @@ export const POST_SORT_DEFAULT = 'default'
 export const POST_SORT_LATEST = 'latest'
 
 export function getPostSortMode(router) {
-  return router?.query?.sort === POST_SORT_LATEST
+  const path = router?.asPath?.split(/[?#]/)[0] || router?.pathname
+  return isPostListPath(path) && router?.query?.sort === POST_SORT_LATEST
     ? POST_SORT_LATEST
     : POST_SORT_DEFAULT
 }
@@ -21,11 +29,12 @@ export function usePostSort(listRef) {
   const router = useRouter()
   const [sortMode, setSortMode] = useState(() => getPostSortMode(router))
   const previousPositions = useRef(null)
+  const urlSortMode = getPostSortMode(router)
 
   useEffect(() => {
     if (!router.isReady) return
-    setSortMode(getPostSortMode(router))
-  }, [router.isReady, router.query.sort])
+    setSortMode(urlSortMode)
+  }, [router.isReady, urlSortMode])
 
   useIsomorphicLayoutEffect(() => {
     const positions = previousPositions.current
@@ -71,14 +80,13 @@ export function usePostSort(listRef) {
 
   const changeSortMode = useCallback(
     value => {
-      if (value === sortMode) return
+      if (value === sortMode || !isPostListPath(router.asPath.split(/[?#]/)[0]))
+        return
 
       const positions = new Map()
-      listRef.current
-        ?.querySelectorAll('[data-post-key]')
-        .forEach(element => {
-          positions.set(element.dataset.postKey, element.getBoundingClientRect())
-        })
+      listRef.current?.querySelectorAll('[data-post-key]').forEach(element => {
+        positions.set(element.dataset.postKey, element.getBoundingClientRect())
+      })
       previousPositions.current = positions
       setSortMode(value)
 
@@ -148,16 +156,15 @@ const PostSortTabs = ({ value, onChange }) => {
       <div
         role='group'
         aria-label={isChinese ? '文章排序方式' : 'Post sorting'}
-        className='relative grid w-full max-w-xs grid-cols-2 rounded-xl border border-white/10 bg-slate-900/60 p-1 shadow-sm shadow-black/10 backdrop-blur-xl sm:w-auto'>
+        className='relative grid w-full max-w-xs grid-cols-2 rounded-xl border border-white/10 bg-slate-900/60 p-1 shadow-sm shadow-black/10 backdrop-blur-xl sm:w-auto'
+      >
         <span
           aria-hidden='true'
           className='pointer-events-none absolute bottom-1 left-1 top-1 rounded-lg bg-gradient-to-br from-indigo-500/90 to-indigo-700/90 shadow-sm shadow-indigo-950/30 ring-1 ring-white/10 transition-transform duration-300 ease-out'
           style={{
             width: 'calc(50% - 4px)',
             transform:
-              value === POST_SORT_LATEST
-                ? 'translateX(100%)'
-                : 'translateX(0)'
+              value === POST_SORT_LATEST ? 'translateX(100%)' : 'translateX(0)'
           }}
         />
         {options.map(option => {
@@ -172,7 +179,8 @@ const PostSortTabs = ({ value, onChange }) => {
                 selected
                   ? 'text-white'
                   : 'text-slate-300 hover:bg-white/5 hover:text-white'
-              }`}>
+              }`}
+            >
               {option.label}
             </button>
           )

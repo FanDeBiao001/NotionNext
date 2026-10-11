@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { siteConfig } from '@/lib/config'
+import { stripPostSortFromNonListHref } from '@/lib/utils/postSortUrl'
 
 // 过滤 <a> 标签不能识别的 props
 const filterDOMProps = props => {
@@ -112,9 +113,10 @@ const SmartLink = ({ href, children, ...rest }) => {
     typeof href === 'string'
       ? mergePreservedQueryForStringHref(href)
       : mergePreservedQueryForObjectHref(href)
+  const safeHref = stripPostSortFromNonListHref(mergedHref, LINK)
 
   return (
-    <Link href={mergedHref} {...filterLinkProps(rest)}>
+    <Link href={safeHref} {...filterLinkProps(rest)}>
       {children}
     </Link>
   )

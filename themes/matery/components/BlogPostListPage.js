@@ -77,7 +77,7 @@ const BlogPostListPage = ({
           <PaginationSimple
             page={page}
             totalPage={totalPage}
-            sortMode={sortMode}
+            sortMode={isHomePostList ? sortMode : undefined}
           />
         )}
       </div>
