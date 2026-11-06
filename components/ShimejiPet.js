@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 
 const CANVAS_SIZE = 150
 const MOVING_SPEED = 30
@@ -28,12 +28,17 @@ function randomPick(probs) {
 }
 
 export default function ShimejiPet() {
-  const containerRef = useRef(null)
-
   useEffect(() => {
     if (typeof window === 'undefined') return
 
     let petInstance = null
+    let disposed = false
+    const requests = new AbortController()
+    const storage = {
+      get(key) { try { return localStorage.getItem(key) } catch { return null } },
+      set(key, value) { try { localStorage.setItem(key, value) } catch {} },
+      remove(key) { try { localStorage.removeItem(key) } catch {} }
+    }
 
     async function initPet() {
       try {
@@ -84,12 +89,12 @@ export default function ShimejiPet() {
 
       // CORS proxy for all external requests
       const PROXY = '/api/shimeji/proxy?url='
-      async function sfetch(url, opts) { return fetch(PROXY + encodeURIComponent(url), opts) }
+      async function sfetch(url, opts) { return fetch(url.startsWith('/') ? url : PROXY + encodeURIComponent(url), { ...opts, signal: requests.signal }) }
 
       // Load character name mapping (overridable via /shimeji-names.json)
       let charNames = {}
       try {
-        const resp = await fetch('/shimeji-names.json')
+        const resp = await fetch('/shimeji-names.json', { signal: requests.signal })
         if (resp.ok) charNames = await resp.json()
       } catch (e) { /* use empty mapping */ }
 
@@ -108,6 +113,7 @@ export default function ShimejiPet() {
       const CACHE_TS_KEY = 'shimeji-remote-ts-v2'
       const CACHE_TTL = 3600000 // 1 hour
 
+      async function loadRemoteModels() {
       try {
         let remoteModels = null
         const cached = sessionStorage.getItem(CACHE_KEY)
@@ -141,12 +147,18 @@ export default function ShimejiPet() {
         }
       } catch (e) { /* remote unavailable, use local only */ }
 
+      }
+      // Remote discovery must not delay the bundled default pet.
+      const remoteModelsReady = loadRemoteModels()
+
       // Restore last selected model
-      const savedModelId = localStorage.getItem('shimeji-model')
-      let initialModel = allModels.find(m => m.id === savedModelId) || localModels[0]
+      const savedModelId = storage.get('shimeji-model')
+      const initialModel = localModels.find(m => m.source === 'local') || localModels[0]
+      if (!initialModel || disposed) return
 
       // Dynamic import spine-webgl
       const spineModule = await import('@/lib/arkpets/spine-webgl.js')
+      if (disposed) return
       const spine = spineModule.default || spineModule
       const webgl = spine.webgl
 
@@ -164,7 +176,7 @@ export default function ShimejiPet() {
 
       // WebGL setup
       const gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false })
-      if (!gl) { console.warn('WebGL unavailable for ShimejiPet'); return }
+      if (!gl) { canvas.remove(); console.warn('WebGL unavailable for ShimejiPet'); return }
 
       gl.enable(gl.BLEND)
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
@@ -343,6 +355,7 @@ export default function ShimejiPet() {
 
       // Load character model — NEVER stops old pet until new one is fully rendered
       async function loadModel(model) {
+        if (disposed) return
         if (currentModel.id === model.id && character) return
 
         const resources = [model.skeleton, model.atlas, model.texture]
@@ -373,6 +386,7 @@ export default function ShimejiPet() {
             console.log('[Shimeji] Downloaded model:', model.name)
           }
 
+          if (disposed) return
           // Set raw data then load binary+atlas (yield to render loop first)
           resources.forEach((r, i) => assetManager.setRawDataURI(r, dataUrls[i]))
           await new Promise(r => requestAnimationFrame(r))
@@ -388,9 +402,10 @@ export default function ShimejiPet() {
             })
           })
 
+          if (disposed) return
           resources.forEach(r => assetManager.setRawDataURI(r, ''))
           currentModel = model
-          localStorage.setItem('shimeji-model', model.id)
+          storage.set('shimeji-model', model.id)
 
           if (animationId) { cancelAnimationFrame(animationId); animationId = null }
           character = null; isVehicle = false
@@ -399,12 +414,13 @@ export default function ShimejiPet() {
           console.log('[Shimeji] Switched to:', model.name)
 
         } catch (err) {
+          if (disposed) return
           console.warn('[Shimeji] Load failed for', model.name, err.message)
           showToast('资源加载失败，请检查网络后重试')
           failedModels.add(model.id)
           // Clear broken localStorage entry
-          if (localStorage.getItem('shimeji-model') === model.id) {
-            localStorage.removeItem('shimeji-model')
+          if (storage.get('shimeji-model') === model.id) {
+            storage.remove('shimeji-model')
           }
           // Try first local model as fallback
           if (!character && allModels.length > 0) {
@@ -558,7 +574,7 @@ export default function ShimejiPet() {
       }
 
       // Event handlers
-      document.addEventListener('mousemove', e => { mousePos.x = e.clientX; mousePos.y = e.clientY })
+      document.addEventListener('mousemove', e => { mousePos.x = e.clientX; mousePos.y = e.clientY }, { signal: requests.signal })
 
       canvas.addEventListener('click', () => {
         if (character) {
@@ -575,7 +591,7 @@ export default function ShimejiPet() {
           closeAll()
           showMenu(e)
         }
-      }, true)
+      }, { capture: true, signal: requests.signal })
 
       // 移动端长按打开菜单
       let longPressTimer = null
@@ -633,23 +649,29 @@ export default function ShimejiPet() {
           showMenu({ pageX: longPressStartX, pageY: longPressStartY, preventDefault: () => {}, stopPropagation: () => {} })
         }, LONG_PRESS_MS)
       }, { passive: true })
-      document.addEventListener('mousemove', dragMove)
-      document.addEventListener('touchmove', dragMove, { passive: false })
-      document.addEventListener('mouseup', dragEnd)
-      document.addEventListener('touchend', dragEnd)
-
-      // Start
-      loadModel(initialModel)
+      document.addEventListener('mousemove', dragMove, { signal: requests.signal })
+      document.addEventListener('touchmove', dragMove, { passive: false, signal: requests.signal })
+      document.addEventListener('mouseup', dragEnd, { signal: requests.signal })
+      document.addEventListener('touchend', dragEnd, { signal: requests.signal })
 
       // Cleanup
       petInstance = {
         destroy() {
           if (animationId) cancelAnimationFrame(animationId)
-          removeMenu()
+          cancelLongPress()
+          closeAll()
           canvas.remove()
         }
       }
+      // Draw the bundled model first, then restore any saved remote selection.
+      await loadModel(initialModel)
+      await remoteModelsReady
+      if (!disposed && savedModelId && savedModelId !== initialModel.id) {
+        const saved = allModels.find(model => model.id === savedModelId)
+        if (saved) await loadModel(saved)
+      }
       } catch (err) {
+        if (disposed) return
         console.warn('[ShimejiPet] init failed:', err.message)
       }
     }
@@ -657,6 +679,8 @@ export default function ShimejiPet() {
     initPet()
 
     return () => {
+      disposed = true
+      requests.abort()
       if (petInstance) petInstance.destroy()
     }
   }, [])

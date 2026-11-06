@@ -64,8 +64,8 @@ const noAuthMiddleware = async (req: NextRequest, ev: any) => {
  * 鉴权中间件
  */
 const authMiddleware = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-  ? clerkMiddleware((auth, req) => {
-      const { userId } = auth()
+  ? clerkMiddleware(async (auth, req) => {
+      const { userId } = await auth()
       // 处理 /dashboard 路由的登录保护
       if (isTenantRoute(req)) {
         if (!userId) {
@@ -78,12 +78,8 @@ const authMiddleware = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 
       // 处理管理员相关权限保护
       if (isTenantAdminRoute(req)) {
-        auth().protect(has => {
-          return (
-            has({ permission: 'org:sys_memberships:manage' }) ||
-            has({ permission: 'org:sys_domains_manage' })
-          )
-        })
+        // System permissions are absent from session claims; require the org admin role.
+        await auth.protect({ role: 'org:admin' })
       }
 
       // 默认继续处理请求

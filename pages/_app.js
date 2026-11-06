@@ -1,3 +1,4 @@
+import PerformanceMonitor from '@/components/PerformanceMonitor'
 // import '@/styles/animate.css' // @see https://animate.style/
 import '@/styles/globals.css'
 import '@/styles/utility-patterns.css'
@@ -10,7 +11,7 @@ import useAdjustStyle from '@/hooks/useAdjustStyle'
 import { GlobalContextProvider } from '@/lib/global'
 import { getBaseLayoutByTheme } from '@/themes/theme'
 import { useRouter } from 'next/router'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { getQueryParam } from '../lib/utils'
 import ErrorHandler from '@/lib/utils/errorHandler'
 
@@ -25,10 +26,35 @@ const ClerkProvider = dynamic(() =>
   import('@clerk/nextjs').then(m => m.ClerkProvider)
 )
 const AppErrorBoundary = ErrorHandler.createErrorBoundary(
-  <div style={{ padding: '2rem', textAlign: 'center', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-    <h1 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Something went wrong</h1>
-    <p style={{ color: '#666', marginBottom: '1.5rem' }}>An unexpected error occurred. Please refresh the page.</p>
-    <button onClick={() => window.location.reload()} style={{ padding: '0.5rem 1.5rem', cursor: 'pointer', border: '1px solid #ccc', borderRadius: '4px', background: 'transparent' }}>Refresh</button>
+  <div
+    style={{
+      padding: '2rem',
+      textAlign: 'center',
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}
+  >
+    <h1 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>
+      Something went wrong
+    </h1>
+    <p style={{ color: '#666', marginBottom: '1.5rem' }}>
+      An unexpected error occurred. Please refresh the page.
+    </p>
+    <button
+      onClick={() => window.location.reload()}
+      style={{
+        padding: '0.5rem 1.5rem',
+        cursor: 'pointer',
+        border: '1px solid #ccc',
+        borderRadius: '4px',
+        background: 'transparent'
+      }}
+    >
+      Refresh
+    </button>
   </div>
 )
 
@@ -42,7 +68,8 @@ const MyApp = ({ Component, pageProps }) => {
   useAdjustStyle()
 
   const route = useRouter()
-  const queryTheme = getQueryParam(route.asPath, 'theme')
+  // Static HTML uses the configured theme; wait for hydration before applying URL overrides.
+  const queryTheme = route.isReady ? getQueryParam(route.asPath, 'theme') : null
   const notionTheme = pageProps?.NOTION_CONFIG?.THEME
   const configTheme = BLOG.THEME
   const theme = useMemo(() => {
@@ -73,13 +100,7 @@ const MyApp = ({ Component, pageProps }) => {
   }, [configTheme, notionTheme, queryTheme, theme])
 
   // 整体布局
-  const GLayout = useCallback(
-    props => {
-      const Layout = getBaseLayoutByTheme(theme)
-      return <Layout {...props} />
-    },
-    [theme]
-  )
+  const GLayout = useMemo(() => getBaseLayoutByTheme(theme), [theme])
 
   const enableClerk = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
   const content = (
@@ -90,6 +111,7 @@ const MyApp = ({ Component, pageProps }) => {
           <Component {...pageProps} />
         </GLayout>
         <ExternalPlugins {...pageProps} />
+        <PerformanceMonitor />
       </GlobalContextProvider>
     </AppErrorBoundary>
   )

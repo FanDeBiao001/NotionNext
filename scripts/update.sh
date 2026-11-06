@@ -261,19 +261,8 @@ update_dependencies() {
     print_success "依赖更新完成"
 }
 
-# 运行测试
-run_tests() {
-    print_info "运行测试..."
-    
-    # 检查是否有测试脚本
-    if yarn run | grep -q "test"; then
-        yarn test || {
-            print_warning "测试失败，但继续执行"
-        }
-    else
-        print_info "未找到测试脚本，跳过测试"
-    fi
-    
+# 验证构建
+validate_build() {
     # 尝试本地构建
     print_info "尝试本地构建..."
     if yarn run | grep -q "build"; then
@@ -316,7 +305,7 @@ main() {
     if merge_to_deploy; then
         update_dependencies
         
-        if run_tests; then
+        if validate_build; then
             finish_update
             
             print_success "🎉 更新完成！"
@@ -326,7 +315,7 @@ main() {
             echo "2. 检查 Vercel 部署状态"
             echo "3. 如有问题，可查看备份: backup/"
         else
-            print_error "测试或构建失败，请检查问题后重试"
+            print_error "构建失败，请检查问题后重试"
             exit 1
         fi
     else

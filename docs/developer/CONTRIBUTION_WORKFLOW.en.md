@@ -17,13 +17,14 @@
 ```bash
 yarn lint
 yarn type-check
-yarn test
 ```
 
-If build-chain changed:
+For UI or build-chain changes:
 
 ```bash
 yarn build
+yarn playwright install chromium
+yarn test:e2e
 ```
 
 ## 3. Commit format

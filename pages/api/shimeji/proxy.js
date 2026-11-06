@@ -1,34 +1,35 @@
-/**
- * Shimeji CORS proxy — fetches remote resources server-side
- * Usage: /api/shimeji/proxy?url=https://...
- */
-export default async function handler(req, res) {
-  const url = req.query.url
-  if (!url) return res.status(400).json({ error: 'Missing url' })
+import { rateLimit } from '@/lib/server/apiSecurity'
 
+export function allowedModelUrl(raw) {
   try {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 30000) // 30s timeout
+    const url = new URL(raw)
+    if (url.protocol !== 'https:' || url.username || url.password || url.port) return null
+    const model = url.hostname === 'raw.githubusercontent.com' && /^\/isHarryh\/Ark-Models\/(?:refs\/heads\/main|main)\/models\/[a-zA-Z0-9_./-]+$/.test(url.pathname)
+    const catalog = url.hostname === 'api.github.com' && url.pathname === '/repos/isHarryh/Ark-Models/contents/models'
+    return (model || catalog) && !url.search && !url.hash ? url : null
+  } catch { return null }
+}
 
-    const resp = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'NotionNext-Shimeji/1.0',
-        'Accept': req.headers.accept || '*/*'
-      }
-    })
-    clearTimeout(timeout)
-
-    if (!resp.ok) return res.status(resp.status).end()
-
-    const contentType = resp.headers.get('content-type') || 'application/octet-stream'
-    res.setHeader('Content-Type', contentType)
+export default async function handler(req, res) {
+  if (req.method !== 'GET') return res.status(405).end()
+  const url = typeof req.query.url === 'string' && allowedModelUrl(req.query.url)
+  if (!url) return res.status(400).json({ error: 'Unsupported model resource.' })
+  if (!await rateLimit(req, res, 'model', 120)) return
+  try {
+    const response = await fetch(url, { redirect: 'error', signal: AbortSignal.timeout(15000), headers: { 'User-Agent': 'NotionNext-Shimeji/1.0' } })
+    if (!response.ok) return res.status(502).end()
+    const max = 20 * 1024 * 1024
+    if (Number(response.headers.get('content-length')) > max) { await response.body?.cancel(); return res.status(413).end() }
+    const chunks = []
+    let size = 0
+    for await (const chunk of response.body) {
+      size += chunk.length
+      if (size > max) return res.status(413).end()
+      chunks.push(Buffer.from(chunk))
+    }
+    res.setHeader('Content-Type', url.hostname === 'api.github.com' ? 'application/json' : /\.png$/.test(url.pathname) ? 'image/png' : 'application/octet-stream')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
     res.setHeader('Cache-Control', 'public, max-age=86400')
-    res.setHeader('Access-Control-Allow-Origin', '*')
-
-    const buffer = await resp.arrayBuffer()
-    res.send(Buffer.from(buffer))
-  } catch (err) {
-    res.status(502).json({ error: err.message || 'timeout' })
-  }
+    return res.send(Buffer.concat(chunks))
+  } catch { return res.status(502).json({ error: 'Model resource unavailable.' }) }
 }

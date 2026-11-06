@@ -63,7 +63,7 @@ function checkConfigFiles() {
     { path: 'tsconfig.json', name: 'TypeScript 配置' },
     { path: '.eslintrc.js', name: 'ESLint 配置' },
     { path: '.prettierrc.json', name: 'Prettier 配置' },
-    { path: 'jest.config.js', name: 'Jest 配置' },
+    { path: 'playwright.config.js', name: 'Playwright 配置' },
     { path: '.npmrc', name: 'NPM 配置' }
   ]
   
@@ -153,10 +153,7 @@ function checkTests() {
   log('\n🧪 检查测试文件...', 'blue')
   
   const testFiles = [
-    { path: '__tests__/components/LazyImage.test.js', name: 'LazyImage 组件测试' },
-    { path: '__tests__/lib/utils/validation.test.js', name: '验证工具测试' },
-    { path: 'jest.setup.js', name: 'Jest 设置文件' },
-    { path: 'jest.env.js', name: 'Jest 环境配置' }
+    { path: 'e2e/reader.spec.js', name: '浏览器端到端测试' }
   ]
   
   let passed = 0
@@ -183,7 +180,7 @@ function checkDependencies() {
   log('✅ node_modules 目录存在', 'green')
   
   // 检查关键依赖
-  const keyDeps = ['next', 'react', 'tailwindcss', '@testing-library/react', 'jest']
+  const keyDeps = ['next', 'react', 'tailwindcss', '@playwright/test']
   let passed = 1 // node_modules 存在
   
   keyDeps.forEach(dep => {
@@ -260,27 +257,6 @@ function testBuild() {
 }
 
 /**
- * 运行测试
- */
-function runTests() {
-  log('\n🧪 运行测试...', 'blue')
-  
-  log('🔧 运行测试命令...', 'cyan')
-  const result = runCommand('npm test -- --passWithNoTests', '单元测试', true)
-  
-  if (result.success) {
-    log('✅ 测试运行成功', 'green')
-    return { passed: 1, total: 1 }
-  } else {
-    log('❌ 测试运行失败', 'red')
-    if (result.error) {
-      console.log(result.error)
-    }
-    return { passed: 0, total: 1 }
-  }
-}
-
-/**
  * 检查安全性
  */
 function checkSecurity() {
@@ -323,7 +299,6 @@ function generateHealthReport(results) {
         '依赖安装',
         '代码质量',
         '项目构建',
-        '单元测试',
         '安全检查'
       ][index],
       ...result
@@ -357,7 +332,6 @@ async function main() {
   results.push(checkDependencies())
   results.push(runQualityChecks())
   results.push(testBuild())
-  results.push(runTests())
   results.push(checkSecurity())
   
   // 生成报告

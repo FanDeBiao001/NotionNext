@@ -30,7 +30,9 @@ yarn dev
 ```bash
 yarn lint
 yarn type-check
-yarn test
+yarn build
+yarn playwright install chromium
+yarn test:e2e
 ```
 
 ## 4. 你应该先读什么

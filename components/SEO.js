@@ -1,6 +1,6 @@
 import { siteConfig } from '@/lib/config'
 import { useGlobal } from '@/lib/global'
-import { createSiteUrl, normalizeSiteUrl } from '@/lib/sitemap-utils'
+import { buildSitemapLoc, createSiteUrl, normalizeSiteUrl } from '@/lib/sitemap-utils'
 import { isHttpLink, loadExternalResource } from '@/lib/utils'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
@@ -29,6 +29,7 @@ const SEO = props => {
   )
   const SUB_PATH = siteConfig('SUB_PATH', '')
   let url = PATH?.length ? createSiteUrl(LINK, SUB_PATH) || LINK : LINK
+  const siteBaseUrl = url
   let image
   const router = useRouter()
   const meta = getSEOMeta(props, router, useGlobal()?.locale)
@@ -69,7 +70,7 @@ const SEO = props => {
     keywords = post?.tags?.join(',')
   }
   if (meta) {
-    url = createSiteUrl(url, meta.slug) || url
+    url = buildSitemapLoc({ baseUrl: siteBaseUrl, locale: router.locale && router.locale !== router.defaultLocale ? router.locale : '', slug: meta.slug }) || url
     image = getAbsoluteImageUrl(meta.image || '/bg_image.jpg', LINK)
   }
   const TITLE = siteConfig('TITLE')
@@ -141,10 +142,7 @@ const SEO = props => {
         name='viewport'
         content='width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0'
       />
-      <meta
-        name='robots'
-        content='follow, index, max-snippet:-1, max-image-preview:large, max-video-preview:-1'
-      />
+      <meta name='robots' content={post?.password || /^\/(admin|dashboard|auth|library|search)(\/|$)/.test(router.pathname) ? 'noindex, nofollow' : 'follow, index, max-snippet:-1, max-image-preview:large, max-video-preview:-1'} />
       <meta charSet='UTF-8' />
       <meta name='format-detection' content='telephone=no' />
       <meta name='mobile-web-app-capable' content='yes' />
@@ -168,6 +166,8 @@ const SEO = props => {
 
       {/* 基础SEO元数据 */}
       <link rel='canonical' href={url} />
+      {post?.translations?.length > 0 && <link rel='alternate' hrefLang={language} href={url} />}
+      {post?.translations?.map(item => <link key={item.locale} rel='alternate' hrefLang={item.locale} href={buildSitemapLoc({ baseUrl: siteBaseUrl, locale: item.locale === router.defaultLocale ? '' : item.locale, slug: item.slug })} />)}
       <meta name='keywords' content={keywords} />
       <meta name='description' content={description} />
       <meta name='author' content={AUTHOR} />
@@ -372,9 +372,17 @@ const getIsoTime = value => {
  */
 const getSEOMeta = (props, router, locale) => {
   const { post, siteInfo, tag, category, page } = props
-  const keyword = router?.query?.s
+  const keyword = router?.query?.s || props.initialQuery || router?.query?.keyword
 
   const TITLE = siteConfig('TITLE')
+  const toolTitle = { '/library': '我的阅读', '/series': '系列文章', '/admin': '站长管理' }[router.route]
+  if (toolTitle) return {
+    title: `${toolTitle} | ${siteInfo?.title || TITLE}`,
+    description: siteInfo?.description || '',
+    image: siteInfo?.pageCover,
+    slug: router.route.slice(1),
+    type: 'website'
+  }
   switch (router.route) {
     case '/':
       return {

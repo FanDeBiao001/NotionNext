@@ -36,6 +36,7 @@ export default function LazyImage({
   style,
   loading
 }) {
+  priority = priority || siteConfig('LAZY_LOAD_IMAGES', true) === false
   const maxWidth = siteConfig('IMAGE_COMPRESS_WIDTH')
   const targetImageWidth = getTargetImageWidth(width, maxWidth)
   const defaultPlaceholderSrc = siteConfig('IMG_LAZY_LOAD_PLACEHOLDER')

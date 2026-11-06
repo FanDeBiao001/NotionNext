@@ -94,12 +94,10 @@ function validateOptimizationTasks() {
       ]
     },
     {
-      name: '文档和测试完善',
+      name: '文档和浏览器测试',
       checks: [
-        { file: 'jest.config.js', desc: 'Jest 配置' },
-        { file: 'jest.setup.js', desc: 'Jest 设置文件' },
-        { file: '__tests__/components/LazyImage.test.js', desc: '组件测试示例' },
-        { file: '__tests__/lib/utils/validation.test.js', desc: '工具函数测试' },
+        { file: 'playwright.config.js', desc: 'Playwright 配置' },
+        { file: 'e2e/reader.spec.js', desc: '浏览器回归测试' },
         { file: 'DEPLOYMENT.md', desc: '部署指南' },
         { file: '.github/workflows/ci.yml', desc: 'CI/CD 配置' },
         { file: 'lighthouserc.js', desc: 'Lighthouse 配置' }
@@ -170,7 +168,7 @@ function validateDependencies(filePath) {
     }
     
     // 检查新增的脚本
-    const requiredScripts = ['quality', 'pre-commit', 'dev-tools', 'health-check', 'test']
+    const requiredScripts = ['quality', 'pre-commit', 'dev-tools', 'health-check', 'test:e2e']
     for (const script of requiredScripts) {
       if (!packageJson.scripts?.[script]) {
         return false

@@ -34,6 +34,7 @@ const ReadingHome = ({
 
   return (
     <div id='posts-wrapper' className='w-full scroll-mt-20 pb-12'>
+      <nav aria-label='阅读导航' className='flex flex-wrap gap-5 py-5'><SmartLink href='/series'>系列文章</SmartLink><SmartLink href='/library'>我的阅读</SmartLink><SmartLink href='/search'>全文搜索</SmartLink></nav>
       {startPosts.length > 0 && (
         <ReadingSection
           id='start-here'

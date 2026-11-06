@@ -1,3 +1,4 @@
+import { sanitizeClientProps } from '@/lib/utils/publicData'
 import BLOG from '@/blog.config'
 import { siteConfig } from '@/lib/config'
 import { resolvePostProps } from '@/lib/db/SiteDataApi'
@@ -51,7 +52,7 @@ export async function getStaticProps({
   })
 
   return {
-    props,
+    props: sanitizeClientProps(props),
     revalidate: isStaticExport
       ? undefined
       : siteConfig(

@@ -1,5 +1,5 @@
 /**
- * Shimeji 桌宠本地模型配置
+ * Shimeji 桌宠预设模型配置（默认模型随站点提供）
  * 所有模型资源来自 isHarryh/Ark-Models 仓库
  * https://github.com/isHarryh/Ark-Models
  */
@@ -10,7 +10,7 @@ const LOCAL_MODELS = [
     skeleton: 'build_char_1038_whitw2.skel',
     atlas: 'build_char_1038_whitw2.atlas',
     texture: 'build_char_1038_whitw2.png',
-    resourcePath: 'https://raw.githubusercontent.com/isHarryh/Ark-Models/refs/heads/main/models/1038_whitw2/',
+    resourcePath: '/shimeji/1038_whitw2/',
     source: 'local'
   },
   {
@@ -20,7 +20,7 @@ const LOCAL_MODELS = [
     atlas: 'build_char_4058_pepe.atlas',
     texture: 'build_char_4058_pepe.png',
     resourcePath: 'https://raw.githubusercontent.com/isHarryh/Ark-Models/refs/heads/main/models/4058_pepe/',
-    source: 'local'
+    source: 'remote'
   },
   {
     id: 'char_4093_frston',
@@ -29,7 +29,7 @@ const LOCAL_MODELS = [
     atlas: 'build_char_4093_frston.atlas',
     texture: 'build_char_4093_frston.png',
     resourcePath: 'https://raw.githubusercontent.com/isHarryh/Ark-Models/refs/heads/main/models/4093_frston/',
-    source: 'local'
+    source: 'remote'
   },
   {
     id: 'char_285_medic2',
@@ -38,7 +38,7 @@ const LOCAL_MODELS = [
     atlas: 'build_char_285_medic2.atlas',
     texture: 'build_char_285_medic2.png',
     resourcePath: 'https://raw.githubusercontent.com/isHarryh/Ark-Models/refs/heads/main/models/285_medic2/',
-    source: 'local'
+    source: 'remote'
   },
   {
     id: 'char_278_orchid',
@@ -47,7 +47,7 @@ const LOCAL_MODELS = [
     atlas: 'build_char_278_orchid.atlas',
     texture: 'build_char_278_orchid.png',
     resourcePath: 'https://raw.githubusercontent.com/isHarryh/Ark-Models/refs/heads/main/models/278_orchid/',
-    source: 'local'
+    source: 'remote'
   },
   {
     id: 'char_4000_jnight',
@@ -56,7 +56,7 @@ const LOCAL_MODELS = [
     atlas: 'build_char_4000_jnight.atlas',
     texture: 'build_char_4000_jnight.png',
     resourcePath: 'https://raw.githubusercontent.com/isHarryh/Ark-Models/refs/heads/main/models/4000_jnight/',
-    source: 'local'
+    source: 'remote'
   }
 ]
 

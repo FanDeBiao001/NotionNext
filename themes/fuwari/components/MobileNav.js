@@ -8,7 +8,6 @@ const MobileNav = ({ locale, customNav, customMenu }) => {
   const [open, setOpen] = useState(false)
   const [openSub, setOpenSub] = useState('')
   const panelRef = useRef(null)
-  if (!siteConfig('FUWARI_MOBILE_MENU', true, CONFIG)) return null
 
   const links = getFuwariMenuLinks({ locale, customNav, customMenu }).slice(0, 5)
 
@@ -20,7 +19,9 @@ const MobileNav = ({ locale, customNav, customMenu }) => {
       }
     }
     document.addEventListener('mousedown', onClickOutside)
-    return () => document.removeEventListener('mousedown', onClickOutside)
+    if (!siteConfig('FUWARI_MOBILE_MENU', true, CONFIG)) return null
+
+  return () => document.removeEventListener('mousedown', onClickOutside)
   }, [open])
 
   return (

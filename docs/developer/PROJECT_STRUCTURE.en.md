@@ -9,7 +9,7 @@
 - `components/`: Cross-theme reusable components
 - `lib/`: Core logic (data, cache, utilities, config read)
 - `conf/`: Split config files aggregated by `blog.config.js`
-- `__tests__/`: Unit tests
+- `e2e/`: Browser end-to-end tests
 - `scripts/`: Engineering scripts
 - `.github/`: Issue/PR templates and collaboration metadata
 

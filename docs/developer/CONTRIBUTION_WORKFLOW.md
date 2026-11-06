@@ -17,13 +17,14 @@
 ```bash
 yarn lint
 yarn type-check
-yarn test
 ```
 
-如果改动涉及构建链路，建议额外执行：
+如果改动涉及页面交互或构建链路，再执行：
 
 ```bash
 yarn build
+yarn playwright install chromium
+yarn test:e2e
 ```
 
 ## 3. 提交规范

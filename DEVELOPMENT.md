@@ -80,10 +80,8 @@ yarn
 - `yarn remove-hooks`：移除 Git hooks。
 - `yarn check-hooks`：检查 hooks 安装状态。
 
-- `yarn test`：运行 Jest 单元测试。
-- `yarn test:watch`：监听模式运行 Jest。
-- `yarn test:coverage`：运行测试并生成覆盖率。
-- `yarn test:ci`：CI 模式运行测试（覆盖率+无 watch）。
+
+- `yarn test:e2e`：运行浏览器端到端测试（先执行 `yarn build`，首次使用先执行 `yarn playwright install chromium`）。
 
 - `yarn health-check`：执行项目健康检查脚本。
 - `yarn validate`：执行验证入口（当前映射到 health-check）。
@@ -233,8 +231,9 @@ yarn dev
 # 运行代码质量检查
 yarn quality
 
-# 运行测试
-yarn test
+# 运行浏览器测试
+yarn build
+yarn test:e2e
 ```
 
 ### 3. 提交代码
@@ -263,7 +262,6 @@ git push origin feature/your-feature-name
 - **Next.js: debug server-side** - 调试服务端代码
 - **Next.js: debug client-side** - 调试客户端代码
 - **Next.js: debug full stack** - 全栈调试
-- **Jest: debug tests** - 调试测试
 
 ### 浏览器调试
 

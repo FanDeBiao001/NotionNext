@@ -1,3 +1,4 @@
+import ArticleTools from './ArticleTools'
 import { siteConfig } from '@/lib/config'
 import { compressImage, mapImgUrl } from '@/lib/db/notion/mapImage'
 import NotionEmbed from '@/components/NotionEmbed'
@@ -16,7 +17,7 @@ import OriginalityProof from './OriginalityProof'
  * @param {*} param0
  * @returns
  */
-const NotionPage = ({ post, className }) => {
+const NotionPage = ({ post, className, showTools = true }) => {
   // 是否关闭数据库和画册的点击跳转
   const POST_DISABLE_GALLERY_CLICK = siteConfig('POST_DISABLE_GALLERY_CLICK')
   const POST_DISABLE_DATABASE_CLICK = siteConfig('POST_DISABLE_DATABASE_CLICK')
@@ -115,6 +116,7 @@ const NotionPage = ({ post, className }) => {
     <div
       id='notion-article'
       className={`mx-auto overflow-hidden ${className || ''}`}>
+      {showTools && post?.type === 'Post' && <ArticleTools post={post} />}
       <NotionRenderer
         recordMap={post?.blockMap}
         mapPageUrl={mapPageUrl}

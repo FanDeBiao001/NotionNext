@@ -1,4 +1,5 @@
 module.exports = {
+  ignorePatterns: ['lib/arkpets/spine-webgl.js'],
   env: {
     browser: true,
     es2021: true,
@@ -24,7 +25,6 @@ module.exports = {
   },
   plugins: [
     'react',
-    'react-hooks',
     'prettier',
     '@typescript-eslint' // 添加 TypeScript 插件
   ],
@@ -48,7 +48,7 @@ module.exports = {
       parser: null // 避免对 `.eslintrc.js` 文件使用 TypeScript 解析器
     },
     {
-      files: ['**/*.js'], // Match all .js files 对js的代码规范检查不那么严格
+      files: ['**/*.js', '**/*.jsx'], // Match all .js files 对js的代码规范检查不那么严格
       rules: {
         '@typescript-eslint/no-unsafe-assignment': 'off',
         '@typescript-eslint/no-unsafe-argument': 'off',

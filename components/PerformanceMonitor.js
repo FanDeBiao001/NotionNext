@@ -1,87 +1,22 @@
 import { useEffect } from 'react'
-import BLOG from '@/blog.config'
+import { siteConfig } from '@/lib/config'
 
-/**
- * 性能监控组件
- * 监控Web Vitals指标并上报
- */
-const PerformanceMonitor = () => {
+export default function PerformanceMonitor() {
+  const enabled = siteConfig('ENABLE_WEB_VITALS', true)
   useEffect(() => {
-    if (!BLOG.ENABLE_WEB_VITALS || typeof window === 'undefined') {
-      return
+    if (!enabled) return
+    let active = true
+    const report = ({ name, value, id, rating }) => {
+      if (!active) return
+      const metric = { name, value, id, rating }
+      window.dispatchEvent(new CustomEvent('notionnext:web-vital', { detail: metric }))
+      if (typeof window.gtag === 'function') window.gtag('event', name, { value: Math.round(name === 'CLS' ? value * 1000 : value), metric_id: id, metric_value: value, metric_rating: rating, non_interaction: true })
+      if (process.env.NODE_ENV === 'development') console.debug('[Performance]', metric)
     }
-
-    // 监控Core Web Vitals
-    const reportWebVitals = (metric) => {
-      const { name, value, id } = metric
-      
-      // 检查是否超出性能预算
-      const budget = BLOG.PERFORMANCE_BUDGET
-      let isOverBudget = false
-      
-      switch (name) {
-        case 'FCP':
-          isOverBudget = value > budget.FCP
-          break
-        case 'LCP':
-          isOverBudget = value > budget.LCP
-          break
-        case 'FID':
-          isOverBudget = value > budget.FID
-          break
-        case 'CLS':
-          isOverBudget = value > budget.CLS
-          break
-      }
-
-      // 控制台输出性能指标
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`[Performance] ${name}: ${value}${isOverBudget ? ' ⚠️ Over Budget' : ' ✅'}`)
-      }
-
-      // 可以在这里添加性能数据上报逻辑
-      // 例如发送到Google Analytics、Vercel Analytics等
-      if (window.gtag) {
-        window.gtag('event', name, {
-          event_category: 'Web Vitals',
-          event_label: id,
-          value: Math.round(name === 'CLS' ? value * 1000 : value),
-          non_interaction: true
-        })
-      }
-    }
-
-    // 动态导入web-vitals库
-    import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-      getCLS(reportWebVitals)
-      getFID(reportWebVitals)
-      getFCP(reportWebVitals)
-      getLCP(reportWebVitals)
-      getTTFB(reportWebVitals)
-    }).catch(err => {
-      console.warn('Failed to load web-vitals:', err)
-    })
-
-    // 监控资源加载性能
-    const monitorResourceTiming = () => {
-      if (!window.performance || !window.performance.getEntriesByType) {
-        return
-      }
-
-      const resources = window.performance.getEntriesByType('resource')
-      const slowResources = resources.filter(resource => resource.duration > 1000)
-      
-      if (slowResources.length > 0 && process.env.NODE_ENV === 'development') {
-        console.warn('[Performance] Slow resources detected:', slowResources)
-      }
-    }
-
-    // 延迟执行资源监控
-    setTimeout(monitorResourceTiming, 5000)
-
-  }, [])
-
+    import('web-vitals').then(({ onCLS, onINP, onFCP, onLCP, onTTFB }) => {
+      if (active) [onCLS, onINP, onFCP, onLCP, onTTFB].forEach(register => register(report))
+    }).catch(() => {})
+    return () => { active = false }
+  }, [enabled])
   return null
 }
-
-export default PerformanceMonitor

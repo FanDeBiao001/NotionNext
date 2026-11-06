@@ -51,10 +51,8 @@ const SmartLink = ({ href, children, ...rest }) => {
     const params = new URLSearchParams(queryString)
     const preserved = {}
     for (const [key, value] of params.entries()) {
-      // 文章排序只属于首页列表。分页组件会显式携带它，不应污染
-      // 分类、标签、文章详情等其它站内链接。
-      if (key === 'sort') continue
-      if (value !== '') preserved[key] = value
+      // 排序由列表分页显式携带；只自动保留主题，避免传播敏感参数。
+      if (key === 'theme' && value !== '') preserved[key] = value
     }
     return preserved
   }
@@ -116,7 +114,7 @@ const SmartLink = ({ href, children, ...rest }) => {
   const safeHref = stripPostSortFromNonListHref(mergedHref, LINK)
 
   return (
-    <Link href={safeHref} {...filterLinkProps(rest)}>
+    <Link prefetch={siteConfig('PREFETCH_LINKS', true) ? undefined : false} href={safeHref} {...filterLinkProps(rest)}>
       {children}
     </Link>
   )

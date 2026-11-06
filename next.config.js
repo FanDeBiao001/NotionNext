@@ -12,6 +12,7 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 
 // 扫描项目 /themes下的目录名
 const themes = scanSubdirectories(path.resolve(__dirname, 'themes'))
+require('./lib/build/themeRegistry').writeThemeRegistry(themes)
 // 检测用户开启的多语言
 const locales = (function () {
   // 根据BLOG_NOTION_PAGE_ID 检查支持多少种语言数据.
@@ -131,7 +132,7 @@ const preBuild = (function () {
 })()
 
 function isVersionedPageBlockCacheKey(key) {
-  return /^page_block_.+_\d{10,}$/.test(String(key || ''))
+  return /(?:^|:)page_block_.+_\d{10,}$/.test(String(key || ''))
 }
 
 function pruneTransientNotionDataCache(dataDir) {
@@ -195,18 +196,17 @@ function getOutput() {
 
 const nextConfig = {
   eslint: {
-    ignoreDuringBuilds: true
+    ignoreDuringBuilds: false
   },
   output: getOutput(),
   staticPageGenerationTimeout: getStaticPageGenerationTimeoutSec(),
 
   // 性能优化配置
-  compress: true,
+  compress: BLOG.ENABLE_GZIP,
   poweredByHeader: false,
   generateEtags: true,
 
   // 构建优化
-  swcMinify: true,
   modularizeImports: {
     '@heroicons/react/24/outline': {
       transform: '@heroicons/react/24/outline/{{member}}'
@@ -338,53 +338,9 @@ const nextConfig = {
         {
           source: '/:path*{/}?',
           headers: [
-            // 为了博客兼容性，不做过多安全限制
-            { key: 'Access-Control-Allow-Credentials', value: 'true' },
-            { key: 'Access-Control-Allow-Origin', value: '*' },
-            {
-              key: 'Access-Control-Allow-Methods',
-              value: 'GET,OPTIONS,PATCH,DELETE,POST,PUT'
-            },
-            {
-              key: 'Access-Control-Allow-Headers',
-              value:
-                'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-            }
-            // 安全头部 相关配置，谨慎开启
-            //   { key: 'X-Frame-Options', value: 'DENY' },
-            //   { key: 'X-Content-Type-Options', value: 'nosniff' },
-            //   { key: 'X-XSS-Protection', value: '1; mode=block' },
-            //   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-            //   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
-            //   {
-            //     key: 'Strict-Transport-Security',
-            //     value: 'max-age=31536000; includeSubDomains; preload'
-            //   },
-            //   {
-            //     key: 'Content-Security-Policy',
-            //     value: [
-            //       "default-src 'self'",
-            //       "script-src 'self' 'unsafe-inline' 'unsafe-eval' *.googleapis.com *.gstatic.com *.google-analytics.com *.googletagmanager.com",
-            //       "style-src 'self' 'unsafe-inline' *.googleapis.com *.gstatic.com",
-            //       "img-src 'self' data: blob: *.notion.so *.unsplash.com *.githubusercontent.com *.gravatar.com",
-            //       "font-src 'self' *.googleapis.com *.gstatic.com",
-            //       "connect-src 'self' *.google-analytics.com *.googletagmanager.com",
-            //       "frame-src 'self' *.youtube.com *.vimeo.com",
-            //       "object-src 'none'",
-            //       "base-uri 'self'",
-            //       "form-action 'self'"
-            //     ].join('; ')
-            //   },
-
-            //   // CORS 配置（更严格）
-            //   { key: 'Access-Control-Allow-Credentials', value: 'false' },
-            //   {
-            //     key: 'Access-Control-Allow-Origin',
-            //     value: process.env.NODE_ENV === 'production'
-            //       ? siteConfig('LINK') || 'https://yourdomain.com'
-            //       : '*'
-            //   },
-            //   { key: 'Access-Control-Max-Age', value: '86400' }
+            { key: 'X-Content-Type-Options', value: 'nosniff' },
+            { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+            { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' }
           ]
         },
         //   {

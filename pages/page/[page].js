@@ -1,3 +1,4 @@
+import { sanitizeClientProps } from '@/lib/utils/publicData'
 import BLOG from '@/blog.config'
 import { siteConfig } from '@/lib/config'
 import { fetchGlobalAllData, getPostBlocks } from '@/lib/db/SiteDataApi'
@@ -68,7 +69,7 @@ export async function getStaticProps({ params: { page }, locale }) {
 
   delete props.allPages
   return {
-    props,
+    props: sanitizeClientProps(props),
     revalidate: process.env.EXPORT
       ? undefined
       : siteConfig(
