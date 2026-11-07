@@ -1,109 +1,91 @@
 import { useRouter } from 'next/router'
 import { useImperativeHandle, useRef, useState } from 'react'
 import { useGlobal } from '@/lib/global'
-let lock = false
+import { saveSearchHistory } from '@/lib/content/searchHistory'
 
-const SearchInput = props => {
-  const { currentSearch, cRef, className } = props
-  const [onLoading, setLoadingState] = useState(false)
+const SearchInput = ({ currentSearch, cRef, className, onSearch }) => {
+  const [value, setValue] = useState(currentSearch || '')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const composing = useRef(false)
+  const inputRef = useRef(null)
   const router = useRouter()
-  const searchInputRef = useRef()
   const { locale } = useGlobal()
-  useImperativeHandle(cRef, () => {
-    return {
-      focus: () => {
-        searchInputRef?.current?.focus()
-      }
-    }
-  })
+  useImperativeHandle(cRef, () => ({ focus: () => inputRef.current?.focus() }))
 
-  const handleSearch = () => {
-    const key = searchInputRef.current.value
-    if (key && key !== '') {
-      setLoadingState(true)
-      router.push({ pathname: '/search/' + key }).then(r => {
-        setLoadingState(false)
-      })
-      // location.href = '/search/' + key
-    } else {
-      router.push({ pathname: '/' }).then(r => {})
+  const handleSearch = async event => {
+    event.preventDefault()
+    const term = value.trim()
+    if (!term || composing.current || loading) return
+    onSearch?.(saveSearchHistory(term))
+    setLoading(true)
+    setError('')
+    try {
+      await router.push({ pathname: '/search', query: { s: term } })
+    } catch {
+      setError('搜索暂时不可用，请重试。')
+    } finally {
+      setLoading(false)
     }
-  }
-  const handleKeyUp = e => {
-    if (e.keyCode === 13) {
-      // 回车
-      handleSearch(searchInputRef.current.value)
-    } else if (e.keyCode === 27) {
-      // ESC
-      cleanSearch()
-    }
-  }
-  const cleanSearch = () => {
-    searchInputRef.current.value = ''
-    setShowClean(false)
-    searchInputRef.current.focus()
-  }
-
-  const [showClean, setShowClean] = useState(false)
-  const updateSearchKey = val => {
-    if (lock) {
-      return
-    }
-    searchInputRef.current.value = val
-
-    if (val) {
-      setShowClean(true)
-    } else {
-      setShowClean(false)
-    }
-  }
-  function lockSearchInput() {
-    lock = true
-  }
-
-  function unLockSearchInput() {
-    lock = false
   }
 
   return (
-    <div className={`relative flex w-full ${className || ''}`}>
+    <form
+      role='search'
+      onSubmit={event => {
+        void handleSearch(event)
+      }}
+      className={`relative flex w-full ${className || ''}`}
+    >
       <input
-        ref={searchInputRef}
+        ref={inputRef}
         type='search'
-        className='outline-none box-border w-full h-12 text-sm pl-5 pr-20 rounded-2xl border border-white/15 transition-all duration-200 focus:border-indigo-400/70 focus:ring-2 focus:ring-indigo-400/20 text-gray-100 placeholder:text-gray-400 font-light bg-black/30 backdrop-blur-xl shadow-inner'
-        onKeyUp={handleKeyUp}
-        onCompositionStart={lockSearchInput}
-        onCompositionUpdate={lockSearchInput}
-        onCompositionEnd={unLockSearchInput}
+        aria-label={locale.SEARCH.ARTICLES}
+        maxLength={200}
+        value={value}
+        onChange={event => setValue(event.target.value)}
+        onCompositionStart={() => {
+          composing.current = true
+        }}
+        onCompositionEnd={() => {
+          composing.current = false
+        }}
         placeholder={locale.SEARCH.ARTICLES}
-        onChange={e => updateSearchKey(e.target.value)}
-        defaultValue={currentSearch || ''}
+        className='box-border h-14 w-full rounded-2xl border border-white/20 bg-slate-950/70 pl-5 pr-24 text-base text-slate-100 placeholder:text-slate-400 transition-colors focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/30'
       />
-
-      <div className='absolute inset-y-0 right-3 flex items-center gap-1'>
-        {showClean && (
+      <div className='absolute inset-y-0 right-2 flex items-center gap-1'>
+        {value && (
           <button
             type='button'
             aria-label='清空搜索'
-            className='w-8 h-8 rounded-full text-gray-400 hover:text-white hover:bg-white/10 duration-200'
-            onClick={cleanSearch}>
-            <i className='fas fa-times' />
+            onClick={() => {
+              setValue('')
+              inputRef.current?.focus()
+            }}
+            className='flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-300'
+          >
+            <i aria-hidden='true' className='fas fa-times' />
           </button>
         )}
         <button
-          type='button'
+          type='submit'
+          disabled={loading}
           aria-label='搜索文章'
-          className='w-8 h-8 rounded-full text-gray-300 hover:text-white hover:bg-indigo-500/50 duration-200'
-          onClick={handleSearch}>
+          className='flex h-10 w-10 items-center justify-center rounded-xl text-slate-300 hover:bg-indigo-500/30 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-300 disabled:opacity-50'
+        >
           <i
-            className={`fas ${
-              onLoading ? 'fa-spinner animate-spin' : 'fa-search'
-            }`}
+            aria-hidden='true'
+            className={`fas ${loading ? 'fa-spinner animate-spin' : 'fa-search'}`}
           />
         </button>
       </div>
-    </div>
+      <span
+        role='status'
+        className='absolute left-1 top-full mt-1 text-xs text-rose-300'
+      >
+        {error}
+      </span>
+    </form>
   )
 }
-
 export default SearchInput

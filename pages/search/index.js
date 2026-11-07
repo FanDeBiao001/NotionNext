@@ -1,8 +1,9 @@
 import ReaderPage from '@/components/ReaderPage'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { searchDocuments } from '@/lib/content/search'
+import { saveSearchHistory } from '@/lib/content/searchHistory'
 import { searchPageProps } from '@/lib/server/contentIndex'
 
 export default function Search({
@@ -16,6 +17,10 @@ export default function Search({
   const [category, setCategory] = useState('')
   const [limit, setLimit] = useState(20)
   const query = input === null ? initial : input
+  useEffect(() => {
+    setInput(null)
+    setLimit(20)
+  }, [initial])
   const categories = useMemo(
     () =>
       [...new Set(searchIndex.documents.flatMap(doc => doc.categories))].sort(),
@@ -33,6 +38,7 @@ export default function Search({
         onSubmit={e => {
           e.preventDefault()
           setLimit(20)
+          saveSearchHistory(query)
           void router.replace(
             { pathname: '/search', query: { s: query } },
             undefined,

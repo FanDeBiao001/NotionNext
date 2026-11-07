@@ -157,7 +157,7 @@ const Header = props => {
 
   return (
     <div id='top-nav'>
-      <SearchDrawer cRef={searchDrawer} slot={searchDrawerSlot} />
+      <SearchDrawer cRef={searchDrawer} slot={searchDrawerSlot} posts={props.latestPosts || []} />
       {/* 导航栏 */}
       <div
         id='sticky-nav'
